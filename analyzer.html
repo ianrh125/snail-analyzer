@@ -1,0 +1,171 @@
+<head><base target="_blank">
+    <link rel="shortcut icon" href="#">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        /* changing font for all text */
+        body{
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        /* establishing types for different kinds of text used*/
+        .title{
+            font-weight: bold;
+            margin: 0px; /* altering text spacing */
+        }
+        .prompt{
+            color: blue;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+        .result-text{
+            color: green;
+            display: inline-block; /* allows this and result to display in one line */
+            margin: 0px;
+        }
+        .result-number{
+            font-weight: bold;
+            margin: 0px;
+            display: inline-block;
+        }
+        /* display box for calculators */
+        .calculator{
+            background-color: #EEEEEE;
+            border: 2px solid black;
+            border-radius: 10px; /* round corners */
+            padding: 10px; /* giving text room */
+            margin: 10px; /* spacing calculators apart */
+            width: 500px; /* change if needed,  */
+            /*display: inline-block; /* let them show side by side */
+        }
+        /* display box for calculators */
+        .analyzer{
+            background-color: #EEEEEE;
+            border: 2px solid black;
+            border-radius: 10px; /* round corners */
+            padding: 10px; /* giving text room */
+            margin: 10px; /* spacing calculators apart */
+            width: 1000px; /* change if needed,  */
+            /*display: inline-block; /* let them show side by side */
+        }
+        .result-box{
+            border: 1px solid black;
+            background-color: white;
+            padding: 5px;
+        }
+        .bar-graph{
+            border: 1px solid black;
+            padding: 5px;
+            margin: 5px;
+            min-height: 100px;
+            min-width: 464px;
+        }
+        .graph-bar{
+            display: inline-block;
+            margin: 2px;
+        }
+        .miss-bar{
+            border: 1px solid black;
+            /*border-bottom: 0px;*/
+            background-color: red;
+            width: 40px;
+        }
+        .hit-bar{
+            
+            border: 1px solid black;
+            background-color: #1166dd;
+            width: 40px;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function fact(x){
+            let y = x
+            while(x>2){
+                x=x-1
+                y=y*x
+            }
+            if(y==0){y=y+1}
+            return y
+        }
+    
+        function choose(x,y){
+            let z = (fact(x))/(fact(y)*fact(x-y))
+            return z
+        }
+        
+        // These drawType functions are the foundation of most of the tools. They seem to be working well for me, but it might be good to be extra sure they're working right
+
+        // given deck size, type count, draw size, and quota, calculates the chance of drawing exactly the quota of that type
+        function drawType(allTotal, typeTotal, allDrawn, typeDrawn){
+            let x = choose(allTotal-typeTotal, allDrawn-typeDrawn)*choose(typeTotal, typeDrawn)/choose(allTotal, allDrawn);
+            return x;
+        }
+
+        // given deck size, type count, draw size, and type quota, run drawType for every amount >= quota and sum results
+        // had to be altered to not attempt to draw more than exist in deck
+        function drawTypeMin(allTotal, typeTotal, allDrawn, typeDrawn){
+            let x = 0;
+            for(let i = typeDrawn; i <= allDrawn && i <= typeTotal; i++){
+                x += drawType(allTotal, typeTotal, allDrawn, i);
+            }
+            return x;
+        }
+
+        // given deck size, 2 type counts, draw size, and 2 type quotas, find chance of meeting both quotas
+        // walks through all satisfactory amounts of first type, and uses drawTypeMin to see if second type will meet quota
+        // multiplies the two together to get the intersecting probability, and returns the sum
+        // Since we already accounted for the number of type A being drawn, the second calculation is run with all type A removed from the deck
+        function drawTwoTypeMin(allTotal, totalA, totalB, allDrawn, drawnA, drawnB){
+            let x = 0;
+            for(let i = drawnA; i <= allDrawn && i <= totalA; i++){
+                x += drawType(allTotal, totalA, allDrawn, i)*drawTypeMin(allTotal-totalA, totalB, allDrawn-i, drawnB);
+            }
+            return x;
+        }
+
+        // like drawTwoTypeMin, but for three. The principle is the same
+        function drawThreeTypeMin(allTotal, totalA, totalB, totalC, allDrawn, drawnA, drawnB, drawnC){
+            let x = 0;
+            for(let i = drawnA; i <= allDrawn && i <= totalA; i++){
+                x += drawType(allTotal, totalA, allDrawn, i)*drawTwoTypeMin(allTotal - totalA, totalB, totalC, allDrawn-i, drawnB, drawnC);
+            }
+            return x;
+        }
+        
+        //odds of drawing a card of a type by a certain turn, modified to use drawTypeMin
+        function drawby(T,N){
+            var textType = Node.textContent ? 'textContent' : 'innerText',
+                N = parseFloat(document.getElementById('N').value) || 0,
+                T = parseFloat(document.getElementById('T').value) || 0,
+                result = document.getElementById('result-text');
+            //let x=(1-(choose(99-N,7+T)/choose(99,7+T)));
+            let x = (drawTypeMin(99, N, T+7, 1));
+            result[textType] = x.toLocaleString(undefined,{style: 'percent', minimumFractionDigits:1});
+        } 
+
+        function listProcess(){
+            var textType = Node.textContent ? 'textContent' : 'innerText',
+                L = document.getElementById('decklist').value,
+                result = document.getElementById('analyzer-result');
+            
+            entries = L.split('\n');
+            console.log(entries);
+            result[textType] = entries[0];
+        }
+    </script>
+    <div class="analyzer" name="openinglands">
+        <p class="title"> Lands in Opening Hand</p>
+        <p class="prompt"> Paste your decklist here </p>
+        <textarea id="decklist" rows="10" cols="50">Paste your exported decklist here (format: '1 sol ring')</textarea>
+        <p>
+        <input type="button" value="Compute" onclick="listProcess()">
+        </p>
+        <div class="result-box" id="opening-land-result">
+            <p id='analyzer-result' class="result-text"></p>
+        </div>
+    </div>
+</body>
