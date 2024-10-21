@@ -135,47 +135,7 @@
 </head>
 <body onload="disableButton()">
     <script>
-        //import  testDict from './test.json' assert {type: 'json'};
-        // const testDict = JSON.parse(open('./test.json'));
-        //var fs = require('fs');
-        //const testDict = JSON.parse(fs.readFileSync('./test.json', 'utf8'));\
         var testDict;
-        const frankTable = [
-            [
-                [0.661, 0.699, 0.735, 0.767, 0.796, 0.821, 0.844, 0.867, 0.885, 0.900, 0.916, 0.928, 0.940, 0.950, 0.958, 0.965, 0.972, 0.977, 0.982, 0.986, 0.989, 0.992, 0.994, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1]
-            ],
-            [
-                [0.698, 0.736, 0.769, 0.800, 0.827, 0.851, 0.872, 0.891, 0.907, 0.921, 0.934, 0.945, 0.954, 0.962, 0.969, 0.975, 0.980, 0.984, 0.988, 0.990, 0.993, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1, 1],
-                [0.274, 0.317, 0.362, 0.407, 0.450, 0.492, 0.535, 0.574, 0.612, 0.649, 0.684, 0.716, 0.748, 0.778, 0.803, 0.827, 0.851, 0.871, 0.890, 0.907, 0.923, 0.936, 0.949, 0.959, 0.968, 0.976, 0.982, 0.988, 0.992, 0.995, 0.998, 1]
-            ],
-            [
-                [0.738, 0.776, 0.807, 0.835, 0.860, 0.882, 0.901, 0.917, 0.931, 0.943, 0.953, 0.962, 0.969, 0.976, 0.981, 0.985, 0.988, 0.991, 0.994, 0.995, 0.997, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1],
-                [0.322, 0.371, 0.420, 0.468, 0.512, 0.558, 0.601, 0.641, 0.679, 0.714, 0.748, 0.780, 0.807, 0.834, 0.858, 0.879, 0.898, 0.915, 0.930, 0.943, 0.955, 0.965, 0.973, 0.980, 0.986, 0.990, 0.994, 0.997, 0.998, 1, 1, 1],
-                [0.080, 0.102, 0.129, 0.159, 0.190, 0.224, 0.260, 0.297, 0.335, 0.374, 0.414, 0.456, 0.495, 0.534, 0.574, 0.613, 0.648, 0.684, 0.720, 0.752, 0.783, 0.813, 0.840, 0.865, 0.889, 0.910, 0.930, 0.948, 0.963, 0.977, 0.990, 1]
-            ],
-            [
-                [0.785, 0.819, 0.950, 0.875, 0.897, 0.915, 0.931, 0.944, 0.955, 0.964, 0.972, 0.978, 0.983, 0.987, 0.990, 0.993, 0.995, 0.996, 0.998, 0.998, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [0.385, 0.439, 0.491, 0.543, 0.591, 0.637, 0.679, 0.719, 0.756, 0.790, 0.820, 0.848, 0.871, 0.894, 0.912, 0.929, 0.943, 0.956, 0.966, 0.974, 0.981, 0.986, 0.991, 0.994, 0.996, 0.998, 0.999, 1, 1, 1, 1, 1],
-                [0.110, 0.141, 0.175, 0.212, 0.252, 0.292, 0.337, 0.381, 0.425, 0.471, 0.517, 0.560, 0.604, 0.645, 0.685, 0.723, 0.758, 0.791, 0.824, 0.851, 0.878, 0.901, 0.923, 0.940, 0.956, 0.969, 0.980, 0.988, 0.994, 0.998, 1, 1],
-                [0.018, 0.026, 0.037, 0.050, 0.066, 0.085, 0.106, 0.130, 0.156, 0.186, 0.218, 0.251, 0.287, 0.325, 0.365, 0.405, 0.447, 0.489, 0.532, 0.574, 0.617, 0.658, 0.700, 0.740, 0.779, 0.816, 0.852, 0.885, 0.918, 0.947, 0.975, 1]
-            ],
-            [
-                [0.831, 0.862, 0.888, 0.910, 0.928, 0.943, 0.956, 0.965, 0.974, 0.980, 0.985, 0.989, 0.992, 0.994, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [0.458, 0.516, 0.573, 0.624, 0.674, 0.720, 0.760, 0.797, 0.829, 0.858, 0.884, 0.906, 0.924, 0.940, 0.954, 0.965, 0.973, 0.981, 0.986, 0.991, 0.994, 0.996, 0.998, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1],
-                [0.152, 0.192, 0.236, 0.283, 0.333, 0.383, 0.434, 0.483, 0.535, 0.584, 0.631, 0.675, 0.719, 0.758, 0.794, 0.827, 0.858, 0.884, 0.909, 0.928, 0.946, 0.960, 0.972, 0.981, 0.988, 0.993, 0.997, 0.999, 1, 1, 1, 1],
-                [0.029, 0.042, 0.059, 0.079, 0.103, 0.131, 0.163, 0.197, 0.233, 0.273, 0.316, 0.361, 0.407, 0.454, 0.500, 0.548, 0.597, 0.643, 0.687, 0.731, 0.773, 0.812, 0.847, 0.880, 0.909, 0.935, 0.956, 0.974, 0.987, 0.996, 1, 1]
-            ],
-            [
-                [0.871, 0.898, 0.920, 0.938, 0.953, 0.964, 0.973, 0.980, 0.985, 0.989, 0.992, 0.995, 0.996, 0.998, 0.998, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [0.536, 0.597, 0.653, 0.705, 0.752, 0.793, 0.831, 0.862, 0.889, 0.912, 0.931, 0.947, 0.960, 0.971, 0.978, 0.985, 0.989, 0.993, 0.995, 0.997, 0.998, 0.999, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [0.206, 0.257, 0.311, 0.369, 0.425, 0.482, 0.540, 0.594, 0.645, 0.694, 0.738, 0.781, 0.818, 0.852, 0.881, 0.906, 0.928, 0.946, 0.960, 0.972, 0.981, 0.988, 0.992, 0.996, 0.998, 0.999, 1, 1, 1, 1, 1, 1]
-            ],
-            [
-                [],
-                [0.611, 0.674, 0.729, 0.777, 0.819, 0.856, 0.885, 0.911, 0.933, 0.949, 0.962, 0.973, 0.980, 0.986, 0.991, 0.994, 0.996, 0.998, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [0.271, 0.333, 0.397, 0.462, 0.524, 0.586, 0.643, 0.695, 0.746, 0.790, 0.829, 0.863, 0.893, 0.918, 0.938, 0.954, 0.967, 0.978, 0.985, 0.990, 0.994, 0.997, 0.998, 0.999, 1, 1, 1, 1, 1, 1, 1, 1]
-            ]
-        ]
 
         var landTypes;
         var landCount;
@@ -215,8 +175,11 @@
         function sum(arr){
             return arr.reduce((a, b) => a + b, 0);
         }
-        // These drawType functions are the foundation of most of the tools. They seem to be working well for me, but it might be good to be extra sure they're working right
 
+        // OLD ANALYSIS FUNCTIONS
+        // These functions are here from the old calculators. I could probably remove some, but they're not hurting anything
+
+        // These drawType functions are the foundation of most of the tools. They seem to be working well for me, but it might be good to be extra sure they're working right
         // given deck size, type count, draw size, and quota, calculates the chance of drawing exactly the quota of that type
         function drawType(allTotal, typeTotal, allDrawn, typeDrawn){
             let x = choose(allTotal-typeTotal, allDrawn-typeDrawn)*choose(typeTotal, typeDrawn)/choose(allTotal, allDrawn);
@@ -254,7 +217,7 @@
             return x;
         }
         
-        //odds of drawing a card of a type by a certain turn, modified to use drawTypeMin
+        // odds of drawing a card of a type by a certain turn, modified to use drawTypeMin
         function drawby(T,N){
             var textType = Node.textContent ? 'textContent' : 'innerText',
                 N = parseFloat(document.getElementById('N').value) || 0,
@@ -265,37 +228,17 @@
             result[textType] = x.toLocaleString(undefined,{style: 'percent', minimumFractionDigits:1});
         } 
 
-        function listProcess(){
-            var textType = Node.textContent ? 'textContent' : 'innerText',
-                L = document.getElementById('decklist').value,
-                result = document.getElementById('analyzer-result');
-            
-            entries = L.split('\n');
-            console.log(entries);
-            result[textType] = entries[0];
-        }
-
-
-        function canAffordColor(cmc, pips, sources){
-            if(cmc <= 7 && pips > 0 && pips < 5){
-                if(sources < 10){
-                    return frankTable[cmc - 1][pips - 1][0] * (sources / 10.0) ** pips;
-                }
-                console.log("Frank: " + frankTable[cmc - 1][pips - 1][sources - 10]);
-                console.log("Mine: " + drawTypeMin(41, sources, cmc, pips));
-                return frankTable[cmc - 1][pips - 1][sources - 10];
-            }
-            return drawTypeMin(41, sources, cmc, pips);
-        }
-
+        // converts the color costs of a card into an int from 0-31 representing 5 boolean values 
         function processCost(cost){
             return Math.sign(cost.w) + 2 * Math.sign(cost.u) + 4 * Math.sign(cost.b) + 8 * Math.sign(cost.r) + 16 * Math.sign(cost.g);
         }
 
+        // count the number of colors in a card's mana cost
         function numColors(cost){
             return Math.sign(cost.w) + Math.sign(cost.u) + Math.sign(cost.b) + Math.sign(cost.r) + Math.sign(cost.g)
         }
 
+        // extract the colored pips from a color cost
         function colorReqs(cost){
             return {
                 w: cost.w,
@@ -306,11 +249,12 @@
             };
         }
 
-        //encode the color pips in a given cost using prime factors
+        // Encode the color pips of a mana cost as an integer using prime factors
         function pipsToNum(cost){
             return 2 ** cost.w * 3 ** cost.u * 5 ** cost.b * 7 ** cost.r * 11 ** cost.g;
         }
 
+        // Prime factorize an encoded cost to regain the pips
         function numToPips(num){
             if(num == 0){
                 console.log("Something has gone very wrong");
@@ -346,6 +290,7 @@
             return out;
         }
 
+        // Simplify the categories of lands to only be relevant to a given color cost
         function landFilter(cost){
             let costCode = processCost(cost);
             let limitedLandTypes = new Array(32).fill(0);
@@ -355,120 +300,27 @@
             return limitedLandTypes;
         }
 
+        // Calculate how lands contribute sources of various color combinations
         function sourcesFromLands(myLandTypes){
             let sources = new Array(32).fill(0);
             for(let i = 0; i < 32; i++){
                 for(let j = 0; j < 32; j++){
-                    sources[i] += myLandTypes[j] * Math.sign(j & i); //if the color output overlaps with the requirement, decrement the requirement
+                    sources[i] += myLandTypes[j] * Math.sign(j & i); //limit the colors produced to the intersection between the colors needed and the actual production
                 }
             }
             return sources;
         }
+
         // Take a land count and set of land categories that are not whole numbers, and convert them to a set of whole numbers
         // These whole numbers need to behave as closely as possible to how those fractional lands would have.
         // I am mainly trying to preserve the output on the color combination requirement array.
         // I am currently using a search function that might be a little bit expensive, but not excessively so compared to the resources used by the analysis itself
         function roundLands(myLandTypes){
-            //
-            
-            /*let roundLandTypes = new Array(32).fill(0);
-            let myLandCount = 0;
-            let roundLandCount = 0;
-            let roundingErrors = new Array(32).fill(0);
-            // round values to the nearest, check on errors.
-            for(let i = 0; i < 32; i++){
-                roundLandTypes[i] = Math.round(myLandTypes[i]);
-                roundLandCount += roundLandTypes[i];
-                myLandCount += myLandTypes[i];
-                let roundError = roundLandTypes[i] - myLandTypes[i];
-                for(let j = 0; j < 32; j++){
-                    roundingErrors[j] += roundError * Math.sign(j & i); //if the color output overlaps with the requirement, decrement the requirement
-                }
-            }
-
-            let backupLandCount = roundLandCount;
-            let backupLandTypes = roundLandTypes.slice();
-            let backupErrors = roundingErrors.slice();
-
-            let sign = 1
-            let sumSq = 0;
-            for(let i= 0; i < 32; i++){
-                sumSq += roundingErrors[i] ** 2;
-            }
-            console.log("Default Error: " + sumSq);
-            let oldSumSq = sumSq;*/
-            
-
-            /*for(let k = 0; k < 100; k++){
-                let maxIndex = -1;
-                let maxValue = k * (1 + (roundLandCount - myLandCount) * sign);
-                for(let i = 0; i < 32; i++){
-                    let value = 0;
-                    for(let j = 0; j < 32; j++){
-                        value -= sign * (roundingErrors[j] - sign / 2) * Math.sign(j & i);
-                    }
-                    if(sign == -1 && roundLandCount[i] <= 0){
-                        value -= 1000;
-                    }
-                    if(value > maxValue){
-                        maxValue = value;
-                        maxIndex = i;
-                    }
-                }
-                if(maxIndex != -1){
-                    roundLandTypes[maxIndex] += sign;
-                    roundLandCount += sign;
-                    for(let j = 0; j < 32; j++){
-                        roundingErrors[j] += sign * Math.sign(j & maxIndex);
-                    }
-                    sumSq = 0;
-                    for(let i= 0; i < 32; i++){
-                        sumSq += roundingErrors[i] ** 2;
-                    }
-                    //console.log(sign + " " + maxIndex + " " + maxValue + " " + sumSq);
-                }
-                
-                sign *= -1;
-                //console.log(k); 
-            }
-
-            //console.log("Total: " + backupLandCount + ", " + roundLandCount + ", " + myLandCount);
-            for(let i= 0; i < 32; i++){
-                //console.log(i + ": " + backupLandTypes[i] + ", " + roundLandTypes[i] + ", " + myLandTypes[i]);
-            }
-
-            //console.log("Errors");
-            sumSq = 0;
-            for(let i= 0; i < 32; i++){
-                //console.log(i + ": "+ backupErrors[i] + ", " + roundingErrors[i]);
-                sumSq += roundingErrors[i] ** 2;
-            }
-            console.log("Algo 1 Error: " + sumSq);*/
-            let result = roundLandSearch(myLandTypes.slice())
-            let searchLandTypes = result[0];
-            let reportedError = result[1];
-            let evaluatedError = new Array(32).fill(0);
-
-            //let benchmark = sourcesFromLands(myLandTypes);
-            //let resultSources = sourcesFromLands(searchLandTypes);
-            /*sumSq = 0;
-            for(let i= 0; i < 32; i++){
-                //console.log(i + ": "+ backupErrors[i] + ", " + roundingErrors[i]);
-                evaluatedError[i] = benchmark[i] - resultSources[i];
-                sumSq += evaluatedError[i] ** 2;
-            }
-            if(sumSq != reportedError){
-                console.log("Error! Function reported error of " + reportedError + ", but external validation shows it was actually " + sumSq);
-            }*/
-            //console.log("Algo 2 Error: " + reportedError);
-            return searchLandTypes;
-        }
-
-        function roundLandSearch(myLandTypes){
             let myLandCount = sum(myLandTypes);
             let roundLandCount = Math.round(myLandCount);
             let floorLandTypes = new Array(32).fill(0);
             let floorLandCount = 0;
+            // start with all lands rounded down, note how many to round back up.
             for(let i = 0; i < 32; i++){
                 floorLandTypes[i] = Math.floor(myLandTypes[i]);
                 floorLandCount += floorLandTypes[i];
@@ -479,23 +331,31 @@
             for(let i = 0; i < 32; i++){
                 error[i] = floorSources[i] - benchmark[i];
             }
-            return roundSearch(floorLandTypes.slice(), myLandTypes, roundLandCount - floorLandCount, 0, error);
+
+            let result = roundSearch(floorLandTypes.slice(), myLandTypes, roundLandCount - floorLandCount, 0, error);
+            let searchLandTypes = result[0];
+            let reportedError = result[1];
+
+            return searchLandTypes;
         }
 
+        // The search function for roundLands
+        // It goes through the lands, and for any that are not already a whole number, it branches and searches best solutions with it rounded up and rounded down
+        // Recursively calls itself for each branch to find the best combination of rounding for the remaining unrounded numbers.
         function roundSearch(myRoundLands, myLandTypes, landsToAdd, i, error){
+            // searches for next unrounded value
             while(myLandTypes[i] <= myRoundLands[i] && i < 31){
                 i++;
             }
             if(landsToAdd < 1 || i > 31){
+                // once it reaches the end of the array or runs out of extra lands to add, calculate error and return
                 let sumSq = 0;
                 for(let j = 0; j < 32; j++){
                     sumSq += error[j] ** 2;
                 }
-                if(Number.isNaN(sumSq)){
-                    console.log("Uh-Oh");
-                }
                 return [myRoundLands, sumSq + landsToAdd * 100, error];
             }
+            // calculate two sets of lands, one with and without land i rounded up, run search on both of them, and return the one with less error
             let set1 = roundSearch(myRoundLands.slice(), myLandTypes, landsToAdd, i + 1, error);
             let newRoundLands = myRoundLands.slice();
             newRoundLands[i] += 1;
@@ -504,22 +364,14 @@
                 newError[j] += Math.sign(j & i);
             }
             let set2 = roundSearch(newRoundLands, myLandTypes, landsToAdd - 1, i + 1, newError);
-            //let sources1 = sourcesFromLands(set1);
-            //let sources2 = sourcesFromLands(set2);
-            
-            //let error1 = 0;
-            //let error2 = 0;
-            //for(let j = 0; j < 32; j++){
-                //error1 += (benchmark - sources1) ** 2;
-                //error2 += (benchmark - sources1) ** 2;
-            //}
             if(set1[1] > set2[1]){
                 return set2;
-                //console.log("see? This happens");
             }
             return set1;
         }
 
+        // adds random noise to a manabase, then rounds it
+        // not currently in use
         function testLandRounding(){
             let myLandTypes = new Array(32).fill(0);
             for(let i = 0; i < 32; i++){
@@ -528,19 +380,22 @@
             roundLands(myLandTypes);
         }
 
+        // for a given set of color pips in a mana cost, generate a cdf for when a manabase is able to afford those colors
         function pipDist(cost){
-
+            // override empty input fields with default values
             if(approxColors == undefined){
                 approxColors = 5;
             }
             if(approxSamples == undefined){
                 approxSamples = 10000;
             }
+            // filter and round lands for given color combination
             let roundedLands = roundLands(landFilter(cost));
-            let roundedLandCount = roundedLands.reduce((a, b) => a + b, 0); //sum
+            let roundedLandCount = sum(roundedLands);
 
             let canCast = new Array(11);
             let comboReqs = getComboReqs(cost);
+            // run 2 different versions of the analysis program, 1 that estimates for expensive cards, one that does the perfect computation for cheap cards.
             if(numColors(cost) < approxColors){
                 for(let n = 0; n <= 10; n++){
                     result = rLandTest(cost, roundedLands, n, roundedLandCount, 31, [], 1, structuredClone(comboReqs));
@@ -553,10 +408,10 @@
                 }
             }
 
-            
             return canCast;
         }
-
+        // calculate the distribution of # of lands in hand after the player mulligans.
+        // follows Frank Karsten's mulligan logic from his 2022 "How many sources?" article.
         function calcMullLands(){
             let openingDist = new Array(8);
             let mullDist = new Array(8);
@@ -567,7 +422,6 @@
                 openingDist[i] = drawType(99, landCount, 7, i);
                 mullDist[i] = openingDist[i];
             }
-            //console.log(mullDist);
 
             //free mull, shoot for at least three
             mullAmount = mullDist[0] + mullDist[1] + mullDist[2] + mullDist[6] + mullDist[7];
@@ -579,7 +433,6 @@
             for(let i = 0; i <= 7; i++){
                 mullDist[i] += openingDist[i] * mullAmount;
             }
-            //console.log(mullLands);
             
             // Second mull, accept 2 if needed
             mullAmount = mullDist[0] + mullDist[1] + mullDist[6] + mullDist[7];
@@ -595,7 +448,6 @@
             for(let i = 4; i <= 7; i++){
                 mullDist[i - 1] += openingDist[i] * mullAmount;
             }
-            //console.log(mullLands);
 
             // After we discard to 6, the 6 and 7 land hands are now 5 and 6 land hands
             mullAmount = mullDist[0] + mullDist[1] + mullDist[5] + mullDist[6];
@@ -612,7 +464,6 @@
             for(let i = 5; i <= 7; i++){
                 mullDist[i - 2] += openingDist[i] * mullAmount;
             }
-            //console.log(mullLands);
 
             // After we discard to 5, we'll settle for at least one spell
             mullAmount = mullDist[0] + mullDist[1] + mullDist[5];
@@ -633,10 +484,10 @@
             for(let i = 0; i < 7; i++){
                 mullLands[i] += mullDist[i];
             }
-            //console.log(mullLands);
-            //only keep after 4
+            // only keep after 4
         }
 
+        // 
         function landsAtTurn(turn){
             let landDist = new Array(11).fill(0);
             for(let startLands = 0; startLands < 7; startLands++){
@@ -647,6 +498,7 @@
             return landDist;
         }
 
+        // This is The Algorithm right here
         // Recursively testing different combinations of lands
         // Moving through the list of possible land types, if one is present in the deck, calculate the different possibilities for how many are in there.
         // Then adjust the numbers to feed back into rLandTest to account for the rest
@@ -690,6 +542,8 @@
                 for(let j = 0; j < 32; j++){
                     comboReqs[j] -= Math.sign(j & i); //if the color output overlaps with the requirement, decrement the requirement
                 }
+                // this next bit was some code for an optimization I had in mind
+                // it did not work as planned but I would like to see if it could at some point in the future
                 /*for(let k = 1; k < 32; k *= 2){
                     let satisfied = true;
                     let colorSum = 0;
@@ -760,15 +614,13 @@
                 }
                 pickedLands.push(i);
                 for(let j = 0; j < 32; j++){
-                    comboReqs[j] -= Math.sign(j & i); //if the color output overlaps with the requirement, decrement the requirement
+                    comboReqs[j] -= Math.sign(j & i);
                 }
-            }
-            if(Math.abs(newMax - max) > 0.001){
-                //console.log("Max: " + max + ", newMax: " + newMax + ", totalP: " + totalP * span);
             }
             return success;
         }
 
+        // see if a given set of lands can affors a given set of color pips
         function landAfford(pickedLands, cost){
             /*
             Frank discussed that to determine if it will meet a requirement with two different colors,
@@ -787,9 +639,9 @@
             return 1;
         }
 
-        function getComboReqs(cost){
-            // Calculates the requirements for each combination of colors
+        // Calculates the requirements for each combination of colors
             // ex. a card costing {1}{U}{W} would require 1 blue source, 1 white source, and 2 sources that can produce either blue or white.
+        function getComboReqs(cost){
             let comboReqs = new Array(32).fill(0);
             comboReqs[1] = cost.w;
             for(let i = 2; i < 4; i++){
@@ -807,6 +659,7 @@
             return comboReqs;
         }
 
+        // using the stored pipdist dictionaries, get the distribution of how many lands are required to cast a spell
         function landsToCast(cost){
             let pipReqs = [];
             if(cost.t == 1){
@@ -824,31 +677,28 @@
             return pipReqs;
         }
 
+        // encode a land's ability to produce each color as a boolean, stored in a 5-bit int
         function findLandIndex(source){
             let landIndex = 0;
             if(source.w){
-                //pw += count * sourceMult;
                 landIndex += 1;
             }
             if(source.u){
-                //pu += count * sourceMult;
                 landIndex += 2;
             }
             if(source.b){
-                //pb += count * sourceMult;
                 landIndex += 4;
             }
             if(source.r){
-                //pr += count * sourceMult;
                 landIndex += 8;
             }
             if(source.g){
-                //pg += count * sourceMult;
                 landIndex += 16;
             }
             return landIndex
         }
 
+        // using the distributions of how many lands are required to cast a given spell and how many are available at a given turn, find the pdf on casting a spell on turns 1-10
         function turnsToCast(cost){
             let landReqs = landsToCast(cost);
             let canCast = new Array(11);
@@ -884,31 +734,12 @@
             return avg;
         }
 
-        /*async function loadDict(){
-            // Loads the dictionary of all cards ever from the server. This has to change later to scale up, but it works for now
-            console.log('loading');
-            var response = await fetch('http://localhost:8080');
-            console.log('loaded');
-            //var response = await fetch('./test.json');
-            testDict = await response.json();
-            console.log('processed');
-        }*/
-
+        // pings the server with the user's decklist, unpacks and stores the result
         async function loadDict(){
-            // Loads the dictionary of all cards ever from the server. This has to change later to scale up, but it works for now
             L = document.getElementById('decklist').value;
-            //console.log(L.toString());
-            //dict = {"cards": L.toString()};
             console.log('loading');
-            /*const request = new Request('http://localhost:8080', {
-                method: "POST",
-                //body: '{"foo": "bar"}',
-                body: JSON.stringify(dict),
-            });*/
-            //var response = await fetch('http://localhost:8080/?cards=' + L);
             var response = await fetch('http://73.11.136.188:80/?cards=' + L);
             console.log('loaded');
-            //var response = await fetch('./test.json');
             testDict = await response.json();
 
             cardList = L.split('\n');
@@ -987,21 +818,17 @@
                             total += parseInt(costList[i]);
                             colorCost.c += count;
                             colorCost.t += parseInt(costList[i]);
-                            //console.log(parseInt(costList[i]));
                         } else{
+                            // there are edge cases, but I don't want to think about them at this very moment
                             //console.log(name+costList[i]);
                         }
                     }
                     card.colorCost = colorCost;
                     let sourceMult = 1;
-                    /*if(card.card_type.includes("creature")){
-                        sourceMult = 0.5;
-                    }else if (card.card_type.includes("artifact")){
-                        sourceMult = 0.75;
-                    }*/
 
                     // categorizing lands and incrementing category totals
                     if(card.card_type.includes("Land")){
+                        // handle fetches
                         if(card.mana_source.fetch){
                             deckColors = Math.sign(white) + Math.sign(blue) + Math.sign(black) + Math.sign(red) + Math.sign(green);
                             if(deckColors >= 3){
@@ -1009,7 +836,6 @@
                             }
                         }
                         let landIndex = findLandIndex(card.mana_source);
-                        // should it be 2/3 rainbow and 1/3 wastes?
                         landTypes[landIndex] += count * sourceMult;
                         landTypes[0] += count * (1-sourceMult);
                         landCount += count;
@@ -1021,29 +847,25 @@
                 
                 
             }
-            //testLandRounding();
+            // turn on estimation config options for players with 4 or 5 color decks
             deckColors = Math.sign(white) + Math.sign(blue) + Math.sign(black) + Math.sign(red) + Math.sign(green);
             if(deckColors >= 4){
                 let configOptions = document.getElementById("approx-config");
                 configOptions.hidden = false;
             }
-            //if(deckColors >= 0){
+            // deck is loaded, unlock compute button
             let computeButton = document.getElementById("compute-button");
             computeButton.disabled = false;
-            //}
             console.log('processed');
-            
-            /*for(let i = 0; i < 5; i += 0.1){
-                console.log(i + ": " + fact(i));
-            }*/
-            
         }
 
+        // on startup, disable the compute button until the user loads their deck
         function disableButton(){
             let computeButton = document.getElementById("compute-button");
             computeButton.disabled = true;
         }
 
+        // for any error we want to display, print it to the output box
         function addError(errorText){
             let error = document.createElement("div");
             error.innerText = errorText;
@@ -1051,6 +873,7 @@
             document.getElementById("analyzer-result-box").appendChild(error);
         }
 
+        // procedurally add rows to the analysis output table
         function tableRow(c1, c2, c3, type){
             newRow = document.createElement("tr");
             cell1 = document.createElement(type);
@@ -1069,6 +892,7 @@
             return newRow;
         }
 
+        // batching all those little functions up into one big "run the analysis" function
         function deepAnal(){
             let textOut = "";
             manaDict = new Map();
@@ -1182,6 +1006,7 @@
             //console.log(mullLands);
             
             // calculate for 3 and above based on lands, 1, and 2
+            // maybe I should account for 3 on its own first. 3 mana ramp is definitely a thing
             for(let i = 0; i < deckList.length; i++){
                 
                 let pips = colorReqs(deckList[i].colorCost);
@@ -1193,6 +1018,7 @@
                     //console.log(deckList[i].mana_cost + ": " + iterations);
                 }
             }
+            // now that all of the mana values are calculated for and added to the dictionary, add up all the relevant info and return it
             let costsCovered = new Set();
             let cmcOnCurve = 0;
             let totalCmcDelay = 0;
@@ -1207,13 +1033,6 @@
                     totalCmcDelay += avgDelay * cmc;
                     totalCmc += cmc;
                     if(!costsCovered.has(deckList[i].mana_cost)){
-                        //result[textType] = result[textType] + "\n" + deckList[i].mana_cost + ": " + turnsToCast(deckList[i].colorCost).map(function(each_element){return each_element.toFixed(3)});
-                        
-                        //console.log(deckList[i].mana_cost);
-                        
-                        /*textOut = textOut + "\n" + deckList[i].mana_cost + ":";
-                        textOut = textOut + " " + (onCurveRate * 100).toFixed(1) + "%, +";
-                        textOut = textOut + (mean(turnCastDist) - deckList[i].colorCost.t).toFixed(3);*/
                         costsCovered.add(deckList[i].mana_cost);
                     }
                 }
@@ -1225,24 +1044,20 @@
             return [cmcOnCurve, totalCmcDelay, textOut];
         }
 
+        // this is the one tied to the compute button
         function cardFetch(){
+            // grab input from calculator
             var textType = Node.textContent ? 'textContent' : 'innerText',
                 L = document.getElementById('decklist').value,
                 result = document.getElementById('analyzer-result');
             
             approxColors = parseFloat(document.getElementById('approx-colors').value) || 10000;
             approxSamples = parseFloat(document.getElementById('approx-samples').value) || 5;
-            //console.log("approxColors: " + approxColors);
-            /*if(white > 0 && blue > 0 && black > 0 && red > 0 && green > 0){
-                result[textType] = "It looks like you have a 5-color deck. Just a heads up, this might take a while";
-            }*/
-            //canAfford(deckList[0].colorCost);
-            //result[textType] = "Metrics: Cast Rate, Average Delay";
             let landCountBackup = landCount;
             let landTypesBackup = landTypes.slice();
-            //let keyList = Object.keys(deckList);
             let startTime = Date.now();
 
+            //create a fresh table for the analysis output
             let table = document.getElementById("output-table");
             if(table != null){
                 table.remove();
@@ -1251,12 +1066,11 @@
             table.id = "output-table";
             table.appendChild(tableRow("Manabase Variation", "Cast Rate", "Average Delay", "th"));
 
+            // run analysis on base deck
             let analResult = deepAnal();
             let baseRate = analResult[0];
             let baseDelay = analResult[1];
             table.appendChild(tableRow("Current Manabase", (baseRate * 100).toFixed(1) + "%", baseDelay.toFixed(3), "td"));
-            //result[textType] = result[textType] + analResult[2];
-            //result[textType] = result[textType] + '\nAverage: ' + (baseRate * 100).toFixed(1) + "%, +" + baseDelay.toFixed(3);
 
             let endTime = Date.now();
             if(endTime - startTime > 1500){
@@ -1267,6 +1081,7 @@
                 return;
             }
 
+            // calculate for +1 wastes variant
             landCount = landCountBackup + 1;
             landTypes = landTypesBackup.slice();
             landTypes[0] = landTypes[0] + 1;
@@ -1275,11 +1090,8 @@
             let wastesRate = analResult[0] - baseRate;
             let wastesDelay = analResult[1] - baseDelay;
             table.appendChild(tableRow("+1 Wastes", "+" + (wastesRate * 100).toFixed(2) + "%", wastesDelay.toFixed(3), "td"));
-            //result[textType] = result[textType] + '\n+Wastes: +' + (wastesRate * 100).toFixed(2) + "%, " + wastesDelay.toFixed(4);
 
-            //baseRate += wastesRate;
-            //baseDelay += wastesDelay
-
+            // for each color, if the deck has that color, try adding one of the corresponding basic
             if(white > 0){
                 landCount = landCountBackup + 1;
                 landTypes = landTypesBackup.slice();
@@ -1289,7 +1101,6 @@
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
                 table.appendChild(tableRow("+1 Plains", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                //result[textType] = result[textType] + '\n+White: +' + (newRate * 100).toFixed(2) + "%, " + newDelay.toFixed(4);
             }
             if(blue > 0){
                 landCount = landCountBackup + 1;
@@ -1300,7 +1111,6 @@
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
                 table.appendChild(tableRow("+1 Island", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                //result[textType] = result[textType] + '\n+Blue: +' + (newRate * 100).toFixed(2) + "%, " + newDelay.toFixed(4);
             }
             if(black > 0){
                 landCount = landCountBackup + 1;
@@ -1311,7 +1121,6 @@
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
                 table.appendChild(tableRow("+1 Swamp", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                //result[textType] = result[textType] + '\n+Black: +' + (newRate * 100).toFixed(2) + "%, " + newDelay.toFixed(4);
             }
             if(red > 0){
                 landCount = landCountBackup + 1;
@@ -1322,7 +1131,6 @@
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
                 table.appendChild(tableRow("+1 Mountain", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                //result[textType] = result[textType] + '\n+Red: +' + (newRate * 100).toFixed(2) + "%, " + newDelay.toFixed(4);
             }
             if(green > 0){
                 landCount = landCountBackup + 1;
@@ -1333,21 +1141,15 @@
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
                 table.appendChild(tableRow("+1 Forest", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                //result[textType] = result[textType] + '\n+Green: +' + (newRate * 100).toFixed(2) + "%, " + newDelay.toFixed(4);
             }
             landCount = landCountBackup ;
             landTypes = landTypesBackup;
             document.getElementById("analyzer-result-box").appendChild(table);
-            //result[textType] = result[textType] + analResult[2];
 
             endTime = Date.now();
             console.log(`Execution time: ${endTime - startTime} ms`);
 
-            //console.log(pipDist(deckList[0].colorCost));
             console.log(landTypes);
-            //let manaCosts = "Generic: " + generic + "\nWhite: " + white + "\nBlue: " + blue + "\nBlack: " + black + "\nRed: " + red + "\nGreen: " + green;
-            //let manaSources = "White: " + pw + "\nBlue: " + pu + "\nBlack: " + pb + "\nRed: " + pr + "\nGreen: " + pg;
-            //result[textType] = "Costs:\n" + manaCosts + "\nSources:\n" + manaSources;
         }
     </script>
     <div class="analyzer" name="openinglands">
@@ -1369,6 +1171,7 @@
             <p id='analyzer-result' class="result-text"></p>
         </div>
     </div>
+    <!-- These info boxes can probably just be on the website itself. This is an embed after all -->
     <div style="float:left">
         <div class = "info-box" name="info">
             <p class="title"> How to Use</p>
