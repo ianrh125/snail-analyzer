@@ -171,6 +171,23 @@
             let z = (fact(x))/(fact(y)*fact(x-y))
             return z
         }
+
+        // In cases where we have x!/y! and x>y, it is effectively equal to (y+1)(y+2)(y+3)...(x-2)(x-1)x
+        // So we could save a lot of computation by simply calculating it as such
+        function partialFact(y, x){
+            let z = 1;
+            while(x > y && x > 1){
+                z = z * x;
+                x = x - 1;
+            }
+            if(z==0){z=z+1}
+            return z;
+        }
+
+        function quickChoose(x, y){
+            let z = partialFact(Math.max(y, x-y), x)/fact(Math.min(y, x-y));
+            return z;
+        }
         
         function sum(arr){
             return arr.reduce((a, b) => a + b, 0);
@@ -182,7 +199,13 @@
         // These drawType functions are the foundation of most of the tools. They seem to be working well for me, but it might be good to be extra sure they're working right
         // given deck size, type count, draw size, and quota, calculates the chance of drawing exactly the quota of that type
         function drawType(allTotal, typeTotal, allDrawn, typeDrawn){
-            let x = choose(allTotal-typeTotal, allDrawn-typeDrawn)*choose(typeTotal, typeDrawn)/choose(allTotal, allDrawn);
+            let x = quickChoose(allTotal-typeTotal, allDrawn-typeDrawn)*quickChoose(typeTotal, typeDrawn)/quickChoose(allTotal, allDrawn);
+            return x;
+        }
+
+        function quickDrawType(allTotal, typeTotal, allDrawn, typeDrawn){
+            //let x = choose(allTotal-typeTotal, allDrawn-typeDrawn)*choose(typeTotal, typeDrawn)/choose(allTotal, allDrawn);
+            let x = (partialFact(allDrawn-typeDrawn, allDrawn) * partialFact(typeTotal - typeDrawn, typeTotal) * partialFact((allTotal - allDrawn) - (typeTotal - typeDrawn), allTotal - allDrawn)) / (partialFact(allTotal - typeTotal, allTotal) * fact(typeDrawn));
             return x;
         }
 
@@ -228,6 +251,8 @@
             result[textType] = x.toLocaleString(undefined,{style: 'percent', minimumFractionDigits:1});
         } 
 
+        // NEW FUNCTIONS
+        
         // converts the color costs of a card into an int from 0-31 representing 5 boolean values 
         function processCost(cost){
             return Math.sign(cost.w) + 2 * Math.sign(cost.u) + 4 * Math.sign(cost.b) + 8 * Math.sign(cost.r) + 16 * Math.sign(cost.g);
