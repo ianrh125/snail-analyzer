@@ -763,7 +763,7 @@
         async function loadDict(){
             L = document.getElementById('decklist').value;
             console.log('loading');
-            var response = await fetch('https//:api.salubrioussnail.com/?cards=' + L);
+            var response = await fetch('https://api.salubrioussnail.com/?cards=' + L);
             console.log('loaded');
             testDict = await response.json();
 
