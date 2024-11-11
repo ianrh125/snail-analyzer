@@ -789,6 +789,9 @@
                 if(cardList[c].includes(" (")){
                     cardList[c] = cardList[c].substring(0, cardList[c].indexOf(" ("));
                 }
+                if(cardList[c].includes(" *F*")){
+                    cardList[c] = cardList[c].substring(0, cardList[c].indexOf(" *F*"));
+                }
                 let name = cardList[c];
                 let cut = 0
                 while(name.charAt(cut) != ' '){
