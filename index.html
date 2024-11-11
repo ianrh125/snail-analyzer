@@ -1143,7 +1143,9 @@
                 addError("Error: Land impact analysis cancelled, predicted runtime too high");
                 return;
             }
-
+            landCount = landCountBackup;
+            landTypes = landTypesBackup;
+            
             // calculate for +1 wastes variant
             table.appendChild(testVariant("+1 Wastes", createDiff([[0, 1]]), baseRate, baseDelay));
             // calculate for variants with all the colors present in the deck
@@ -1160,7 +1162,7 @@
                 table.appendChild(testVariant("+1 Mountain", createDiff([[8, 1]]), baseRate, baseDelay));
             }
             if(green > 0){
-                table.appendChild(testVariant("+1 Mountain", createDiff([[16, 1]]), baseRate, baseDelay));
+                table.appendChild(testVariant("+1 Forest", createDiff([[16, 1]]), baseRate, baseDelay));
             }
             document.getElementById("analyzer-result-box").appendChild(table);
 
