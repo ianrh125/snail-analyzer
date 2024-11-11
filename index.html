@@ -1051,7 +1051,7 @@
             for(let i = 0; i < deckList.length; i++){
                 if(!deckList[i].card_type.includes("Land")){
                     let turnCastDist = turnsToCast(deckList[i].colorCost)
-                    let cmc = deckList[i].colorCost.t;
+                    let cmc = Math.min(deckList[i].colorCost.t, 10);
                     let onCurveRate = turnCastDist[cmc];
                     let avgDelay = mean(turnCastDist) - deckList[i].colorCost.t;
                     cmcOnCurve += onCurveRate * cmc;
