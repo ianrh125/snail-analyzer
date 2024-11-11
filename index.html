@@ -899,6 +899,7 @@
         }
 
         // procedurally add rows to the analysis output table
+        // type: "th" for table header, "td" for table data
         function tableRow(c1, c2, c3, type){
             newRow = document.createElement("tr");
             cell1 = document.createElement(type);
@@ -1069,8 +1070,45 @@
             return [cmcOnCurve, totalCmcDelay, textOut];
         }
 
+        function testVariant(name, landDiff, baseRate, baseDelay){
+            let landCountBackup = landCount;
+            let landTypesBackup = landTypes.slice();
+            for(let i = 0; i < 32; i++){
+                landCount += landDiff[i];
+                landTypes[i] += landDiff[i];
+            }
+            let analResult = deepAnal();
+            let newRate = analResult[0] - baseRate;
+            let newDelay = analResult[1] - baseDelay;
+            let rateText;
+            let delayText;
+            if(newRate < 0){
+                rateText = (newRate * 100).toFixed(2) + "%";
+            }
+            else{
+                rateText = "+" + (newRate * 100).toFixed(2) + "%";
+            }
+            if(newDelay < 0){
+                delayText = newDelay.toFixed(3);
+            }
+            else{
+                delayText = "+" + newDelay.toFixed(3);
+            }
+            landCount = landCountBackup;
+            landTypes = landTypesBackup.slice();
+            return tableRow(name, rateText, delayText, "td");
+        }
+
+        function createDiff(indices){
+            let diff = new Array(32).fill(0);
+            for(let i = 0; i < indices.length; i++){
+                diff[indices[i][0]] += indices[i][1];
+            }
+            return diff;
+        }
+
         // this is the one tied to the compute button
-        function cardFetch(){
+        function colorTest(){
             // grab input from calculator
             var textType = Node.textContent ? 'textContent' : 'innerText',
                 L = document.getElementById('decklist').value,
@@ -1107,98 +1145,23 @@
             }
 
             // calculate for +1 wastes variant
-            landCount = landCountBackup + 1;
-            landTypes = landTypesBackup.slice();
-            landTypes[0] = landTypes[0] + 1;
-
-            analResult = deepAnal();
-            let wastesRate = analResult[0] - baseRate;
-            let wastesDelay = analResult[1] - baseDelay;
-            if(wastesRate < 0){
-                table.appendChild(tableRow("+1 Wastes", (wastesRate * 100).toFixed(2) + "%", wastesDelay.toFixed(3), "td"));
-            }
-            else{
-                table.appendChild(tableRow("+1 Wastes", "+" + (wastesRate * 100).toFixed(2) + "%", wastesDelay.toFixed(3), "td"));
-            }
-
-            // for each color, if the deck has that color, try adding one of the corresponding basic
+            table.appendChild(testVariant("+1 Wastes", createDiff([[0, 1]]), baseRate, baseDelay));
+            // calculate for variants with all the colors present in the deck
             if(white > 0){
-                landCount = landCountBackup + 1;
-                landTypes = landTypesBackup.slice();
-                landTypes[1] = landTypes[1] + 1;
-
-                analResult = deepAnal();
-                let newRate = analResult[0] - baseRate;
-                let newDelay = analResult[1] - baseDelay;
-                if(wastesRate < 0){
-                    table.appendChild(tableRow("+1 Plains", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
-                else{
-                    table.appendChild(tableRow("+1 Plains", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
+                table.appendChild(testVariant("+1 Plains", createDiff([[1, 1]]), baseRate, baseDelay));
             }
             if(blue > 0){
-                landCount = landCountBackup + 1;
-                landTypes = landTypesBackup.slice();
-                landTypes[2] = landTypes[2] + 1;
-
-                analResult = deepAnal();
-                let newRate = analResult[0] - baseRate;
-                let newDelay = analResult[1] - baseDelay;
-                if(wastesRate < 0){
-                    table.appendChild(tableRow("+1 Island", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
-                else{
-                    table.appendChild(tableRow("+1 Island", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
+                table.appendChild(testVariant("+1 Island", createDiff([[2, 1]]), baseRate, baseDelay));
             }
             if(black > 0){
-                landCount = landCountBackup + 1;
-                landTypes = landTypesBackup.slice();
-                landTypes[4] = landTypes[4] + 1;
-
-                analResult = deepAnal();
-                let newRate = analResult[0] - baseRate;
-                let newDelay = analResult[1] - baseDelay;
-                if(wastesRate < 0){
-                    table.appendChild(tableRow("+1 Swamp", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
-                else{
-                    table.appendChild(tableRow("+1 Swamp", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
+                table.appendChild(testVariant("+1 Swamp", createDiff([[4, 1]]), baseRate, baseDelay));
             }
             if(red > 0){
-                landCount = landCountBackup + 1;
-                landTypes = landTypesBackup.slice();
-                landTypes[8] = landTypes[8] + 1;
-
-                analResult = deepAnal();
-                let newRate = analResult[0] - baseRate;
-                let newDelay = analResult[1] - baseDelay;
-                if(wastesRate < 0){
-                    table.appendChild(tableRow("+1 Mountain", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
-                else{
-                    table.appendChild(tableRow("+1 Mountain", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
+                table.appendChild(testVariant("+1 Mountain", createDiff([[8, 1]]), baseRate, baseDelay));
             }
             if(green > 0){
-                landCount = landCountBackup + 1;
-                landTypes = landTypesBackup.slice();
-                landTypes[16] = landTypes[16] + 1;
-
-                analResult = deepAnal();
-                let newRate = analResult[0] - baseRate;
-                let newDelay = analResult[1] - baseDelay;
-                if(wastesRate < 0){
-                    table.appendChild(tableRow("+1 Forest", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
-                else{
-                    table.appendChild(tableRow("+1 Forest", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
-                }
+                table.appendChild(testVariant("+1 Mountain", createDiff([[16, 1]]), baseRate, baseDelay));
             }
-            landCount = landCountBackup ;
-            landTypes = landTypesBackup;
             document.getElementById("analyzer-result-box").appendChild(table);
 
             endTime = Date.now();
@@ -1220,7 +1183,7 @@
         </div>
         <p>
             <input type="button" value="Load" onclick="loadDict()">
-            <input type="button" id="compute-button" value="Compute" onclick="cardFetch()">
+            <input type="button" id="compute-button" value="Compute" onclick="colorTest()">
         </p>
         <div class="result-box" id="analyzer-result-box">
             <p id='analyzer-result' class="result-text"></p>
