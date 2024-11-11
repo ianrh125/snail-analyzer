@@ -762,8 +762,9 @@
         // pings the server with the user's decklist, unpacks and stores the result
         async function loadDict(){
             L = document.getElementById('decklist').value;
+            sanitizedL = L.replace("&", "%26");
             console.log('loading');
-            var response = await fetch('https://api.salubrioussnail.com/?cards=' + L);
+            var response = await fetch('https://api.salubrioussnail.com/?cards=' + sanitizedL);
             console.log('loaded');
             testDict = await response.json();
 
