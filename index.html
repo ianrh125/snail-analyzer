@@ -1114,7 +1114,12 @@
             analResult = deepAnal();
             let wastesRate = analResult[0] - baseRate;
             let wastesDelay = analResult[1] - baseDelay;
-            table.appendChild(tableRow("+1 Wastes", "+" + (wastesRate * 100).toFixed(2) + "%", wastesDelay.toFixed(3), "td"));
+            if(wastesRate < 0){
+                table.appendChild(tableRow("+1 Wastes", (wastesRate * 100).toFixed(2) + "%", wastesDelay.toFixed(3), "td"));
+            }
+            else{
+                table.appendChild(tableRow("+1 Wastes", "+" + (wastesRate * 100).toFixed(2) + "%", wastesDelay.toFixed(3), "td"));
+            }
 
             // for each color, if the deck has that color, try adding one of the corresponding basic
             if(white > 0){
@@ -1125,7 +1130,12 @@
                 analResult = deepAnal();
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
-                table.appendChild(tableRow("+1 Plains", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                if(wastesRate < 0){
+                    table.appendChild(tableRow("+1 Plains", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
+                else{
+                    table.appendChild(tableRow("+1 Plains", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
             }
             if(blue > 0){
                 landCount = landCountBackup + 1;
@@ -1135,7 +1145,12 @@
                 analResult = deepAnal();
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
-                table.appendChild(tableRow("+1 Island", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                if(wastesRate < 0){
+                    table.appendChild(tableRow("+1 Island", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
+                else{
+                    table.appendChild(tableRow("+1 Island", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
             }
             if(black > 0){
                 landCount = landCountBackup + 1;
@@ -1145,7 +1160,12 @@
                 analResult = deepAnal();
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
-                table.appendChild(tableRow("+1 Swamp", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                if(wastesRate < 0){
+                    table.appendChild(tableRow("+1 Swamp", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
+                else{
+                    table.appendChild(tableRow("+1 Swamp", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
             }
             if(red > 0){
                 landCount = landCountBackup + 1;
@@ -1155,7 +1175,12 @@
                 analResult = deepAnal();
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
-                table.appendChild(tableRow("+1 Mountain", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                if(wastesRate < 0){
+                    table.appendChild(tableRow("+1 Mountain", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
+                else{
+                    table.appendChild(tableRow("+1 Mountain", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
             }
             if(green > 0){
                 landCount = landCountBackup + 1;
@@ -1165,7 +1190,12 @@
                 analResult = deepAnal();
                 let newRate = analResult[0] - baseRate;
                 let newDelay = analResult[1] - baseDelay;
-                table.appendChild(tableRow("+1 Forest", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                if(wastesRate < 0){
+                    table.appendChild(tableRow("+1 Forest", (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
+                else{
+                    table.appendChild(tableRow("+1 Forest", "+" + (newRate * 100).toFixed(2) + "%", newDelay.toFixed(3), "td"));
+                }
             }
             landCount = landCountBackup ;
             landTypes = landTypesBackup;
@@ -1177,7 +1207,7 @@
             console.log(landTypes);
         }
     </script>
-    <div class="analyzer" name="openinglands">
+    <div class="analyzer" name="deckEntry">
         <p class="title"> Manabase Analyzer</p>
         <p class="prompt"> Paste your decklist here </p>
         <textarea id="decklist" rows="10" cols="50">Paste your exported decklist here (format: '1 sol ring')</textarea>
