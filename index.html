@@ -762,7 +762,7 @@
         // pings the server with the user's decklist, unpacks and stores the result
         async function loadDict(){
             L = document.getElementById('decklist').value;
-            sanitizedL = L.replace("&", "%26");
+            let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "");
             console.log('loading');
             var response = await fetch('https://api.salubrioussnail.com/?cards=' + sanitizedL);
             console.log('loaded');
