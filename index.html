@@ -762,8 +762,9 @@
         // pings the server with the user's decklist, unpacks and stores the result
         async function loadDict(){
             L = document.getElementById('decklist').value;
+            let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "");
             console.log('loading');
-            var response = await fetch('https://api.salubrioussnail.com/?cards=' + L);
+            var response = await fetch('https://api.salubrioussnail.com/?cards=' + sanitizedL);
             console.log('loaded');
             testDict = await response.json();
 
@@ -788,6 +789,9 @@
             for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
                 if(cardList[c].includes(" (")){
                     cardList[c] = cardList[c].substring(0, cardList[c].indexOf(" ("));
+                }
+                if(cardList[c].includes(" *F*")){
+                    cardList[c] = cardList[c].substring(0, cardList[c].indexOf(" *F*"));
                 }
                 let name = cardList[c];
                 let cut = 0
@@ -1166,7 +1170,7 @@
             if(green > 0){
                 table.appendChild(testVariant("+1 Mountain", createDiff([[16, 1]]), baseRate, baseDelay));
             }
-            document.getElementById("analyzer-result-box").appendChild(table);
+            document.getElementById("color-analyzer-result-box").appendChild(table);
 
             endTime = Date.now();
             console.log(`Execution time: ${endTime - startTime} ms`);
@@ -1179,6 +1183,11 @@
                 result = document.getElementById('tap-analyzer-result');
             
             console.log("here");
+            for(let i = 0; i < deckList.length; i++){
+                if(findLandIndex(deckList[i].mana_source) > 0){
+                    
+                }
+            }
         }
     </script>
     <div class="analyzer" name="deckEntry">
