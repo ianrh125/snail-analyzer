@@ -1183,21 +1183,21 @@
         // - lands can start in the opening hand or be drawn later into the game. Make sure to account for both
         // - these should ideally be able to work considering any number of turns after the start of the game. Let's call this n
 
-        function pTapFast(){
+        function pTapFast(turns){
             // Enters untapped if you control 2 or fewer other lands
             // If it's drawn before turn 4 (p = 10/n+7), it's untapped
             // If it's drawn on or after turn 4, (p = n-3/n+7), check for the probability that the player has only drawn 2 or fewer other lands by that point.
             return 0.5;
         }
 
-        function pTapSlow(){
+        function pTapSlow(turns){
             // Enters untapped if you control 2 or more other lands
             // If it's drawn before turn three (p = 9/n+7), check for the probability that the player will draw enough other lands to play first.
             // If it's drawn on or after turn 3 (p = n-2/n+7), check for the probability that the player has drawn two or more other lands by that point.
             return 0.5;
         }
 
-        function pTapCheck(types){
+        function pTapCheck(types, turns){
             // Enters untapped if you control a card of one of a list of specified types.
             // For this category of check lands, I think it would make sense to model it with the probability that the player draws a card of the accepted types before they have no other lands left
             // The required process will likely look something like this:
@@ -1210,19 +1210,19 @@
             return 0.5;
         }
 
-        function pTapTango(){
+        function pTapTango(turns){
             // Enters untapped if you control 2 or more basic lands
             // like pTapCheck, but you check the probability of 2 basics instead of 1
             return 0.5;
         }
 
-        function pTapWilds(types){
+        function pTapWilds(types, turns){
             // For the cycle of "3 or more other [basic type]" lands from eldraine
             // Like pTapCheck, but you use the probability of three instead of 1
             return 0.5;
         }
 
-        function pTapReveal(types){
+        function pTapReveal(types, turns){
             // For the lands that want you to reveal a card of a certain subtype to enter untapped
             // this would work like pTapCheck, but there's now the possibility of playing the card before you draw the land and then everything's all fucked up
             // good luck lmao
@@ -1237,22 +1237,22 @@
                 return 0;
             }
             else if(source.fast == "fast"){
-                return 1 - pTapFast();
+                return pTapFast(turns);
             }
             else if(source.fast == "slow"){
-                return 1 - pTapSlow();
+                return pTapSlow(turns);
             }
             else if(source.fast == "check"){
-                return 1 - pTapCheck(source.fastInfo);
+                return pTapCheck(source.fastInfo, turns);
             }
             else if(source.fast == "tango"){
-                return 1 - pTapTango();
+                return pTapTango(turns);
             }
             else if(source.fast == "wilds"){
-                return 1 - pTapWilds(source.fastInfo);
+                return pTapWilds(source.fastInfo, turns);
             }
             else if(source.fast == "reveal"){
-                return 1 - pTapReveal(source.fastInfo);
+                return pTapReveal(source.fastInfo, turns);
             }
             else if(source.fast == "triskaidekadual"){
                 return 0.2; //Since this is outside the deck, we just have to use a fixed approximation. I'm thinking it won't happen often though
@@ -1269,7 +1269,8 @@
 
         function tapTest(){
             var textType = Node.textContent ? 'textContent' : 'innerText',
-                result = document.getElementById('tap-analyzer-result');
+                result = document.getElementById('tap-analyzer-result'),
+                turns = document.getElementById('tap-turns');
             
             let tapTotal = 0;
             let untapTotal = 0;
@@ -1279,7 +1280,7 @@
             table.appendChild(tableRow(["Land", "Tap Chance"], "th"));
             for(let i = 0; i < deckList.length; i++){
                 if(deckList[i].card_type.includes("Land")){
-                    let tap = pTap(deckList[i].mana_source);
+                    let tap = pTap(deckList[i].mana_source, turns);
                     tapTotal += deckList[i].count * tap;
                     untapTotal += deckList[i].count * (1 - tap);
                     total += deckList[i].count;
@@ -1320,6 +1321,7 @@
     </div>
     <div class="analyzer" name="tapCalc">
         <p class="title"> Tap Analyzer</p>
+        <p class="prompt"> Include first <input type="text" id="tap-turns" value="7" style="width: 30px"> turns in calculations</p>
         <p>
             <input type="button" id="tap-compute-button" value="Compute" onclick="tapTest()">
         </p>    
