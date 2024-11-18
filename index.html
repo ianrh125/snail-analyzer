@@ -1311,35 +1311,40 @@
         // pruning?
         // - save the exploration of branches until the information is relevant?
         // - hard to know when to not count cheap drops, but expensive ones can be treated as wildcards until it comes time to consider them
+
+        // wrapper for tapTest
+        // run rTapTest() on every combination of tapped and untapped lands that can be drawn and compile results
         function tapTestWrapper(tapTotal, curve, nonland, maxTurns){
             let value = 0;
             let deckLands = [tapTotal, landCount - tapTotal];
-            let myMullLands = landsAtTurn(1);
-            for(let i = 0; i <= 6; i++){//lands
-                for(let j = 0; j <= i && j <= tapTotal; j++){//tapped lands
-                    let tapTest = rTapTest(0, [j, i-j], new Array(curve.length), [deckLands[0] - j, deckLands[1] - i + j], nonland, curve, landCount + nonland - 8, 8-i, nonland - 8 + i, maxTurns - 1);
-                    let mult1 = myMullLands[i];
-                    let mult2 = drawType(landCount, tapTotal, i, j);
-                    value += tapTest * mult1 * mult2;
-                    if(isNaN(value)){
-                        console.log("Uh-oh");
-                    }
+            let myMullLands = landsAtTurn(1); // post-mulligan land distribution plus first draw
+            // iterate through each number of lands that can be drawn
+            for(let i = 0; i <= 6; i++){
+                // iterate through each number of drawn lands that enter tapped
+                for(let j = 0; j <= i && j <= tapTotal; j++){
+                    value += rTapTest(0, [j, i-j], new Array(curve.length), [deckLands[0] - j, deckLands[1] - i + j], nonland, curve, landCount + nonland - 8, 8-i, nonland - 8 + i, maxTurns - 1) * myMullLands[i] * drawType(landCount, tapTotal, i, j);
                 }
             }
             return value;
         }
 
+        // given a deck's curve, number of lands, number of tap lands, and the contents of the current hand, calculate how much mana worth of spells the deck will be able to cast within a certain number of turns
+        // This explores all the possible options and adds them together based on their relative probabilities
+        // in order to save computation, this uses a "wildcard" system for cards that are too expensive to cast, treating them as a single category when drawing cards
+        // when more mana becomes available, it uses drawType() to determine how many of the wildcards it can now afford.
         function rTapTest(landsDown, handLands, handCurve, deckLands, deckNL, deckCurve, deckRemaining, wildcards, wildPicks, turnsRemaining){
             if(turnsRemaining == undefined){
                 console.log("Uh-oh");
             }
-            let mana = Math.min(landsDown + Math.sign(handLands[1]), handCurve.length - 1);
-            // not established, use drawType with wildcards
+            // the mana we can work with is based on the number of lands played already plus our ability to play an untapped land
+            let mana = landsDown + Math.sign(handLands[1]);
+            // If this gives us access to cards that we couldn't previously afford, we need to see how many of them we have
+            // This can jump by 2 if we played a tap land last turn and an untapped land this turn
             for(let cmc = 1; cmc <= mana; cmc++){
+                // if we do not have an entry in the curve array for a mana value, that means that it is included in the wildcards and needs to be brought out
                 if(handCurve[cmc] == undefined){
-                    // branch based on number of cards of given cmc drawn
+                    // branch based on number of cards of a given cmc drawn
                     let value = 0;
-                    let probs = 0
                     for(let i = Math.max(0, deckCurve[cmc] - wildPicks); i <= wildcards && i <= deckCurve[cmc]; i++){
                         let newDeckCurve = deckCurve.slice();
                         newDeckCurve[cmc] -= i;
@@ -1347,26 +1352,22 @@
                         newHandCurve[cmc] = i;
                         value += rTapTest(landsDown, handLands.slice(), newHandCurve, deckLands.slice(), deckNL - i, newDeckCurve, deckRemaining, wildcards - i, wildPicks - newDeckCurve[cmc], turnsRemaining) * drawType(wildPicks + wildcards, deckCurve[cmc], wildcards, i);
                         //value += (turnsRemaining + 1) * drawType(wildPicks, deckCurve[mana], wildcards, i);
-                        probs += drawType(wildcards + wildPicks, deckCurve[cmc], wildcards, i);
-                    }
-                    if(probs > 1.01 || probs < 0.99){
-                        console.log("Uh-oh");
                     }
                     return value;
                 }
             }
             let check = mana;
             let value = 0;
-            // spend mana as we are able;
+            // spend mana as we are able
             for(; check > 0; check--){
                 while(handCurve[check] > 0 && mana - check >= 0){
                     handCurve[check] -= 1;
                     mana -= check;
-                    value += check;
+                    value += check; // keep track of mana spent
                 }
             }
 
-            // if we used more mana than we had at the start of the turn, then we need to play an untapped land
+            // if we used more mana than we had at the start of the turn, then we had to have played an untapped land
             if(value > landsDown){
                 handLands[1]--;
                 landsDown++;
@@ -1375,25 +1376,21 @@
                 handLands[0]--;
                 landsDown++;
             }
-            else if (handLands[1] > 0){ // 
+            else if (handLands[1] > 0){ // Otherwise, play an untapped land
                 handLands[1]--;
                 landsDown++;
             }
-            mana += value;
-            //value = 1;
 
             // branch based on card drawn next
             if(turnsRemaining > 0){
-                let probs = 0;
-                if(deckLands[0] > 0){
+                // if we can draw lands of either type, draw and calculate the probability
+                if(deckLands[0] > 0){ 
                     value += rTapTest(landsDown, [handLands[0] + 1, handLands[1]], handCurve.slice(), [deckLands[0] - 1, deckLands[1]], deckNL, deckCurve.slice(), deckRemaining - 1, wildcards, wildPicks, turnsRemaining - 1) * (deckLands[0] / deckRemaining);
-                    probs += (deckLands[0] / deckRemaining);
                 }
                 if(deckLands[1] > 0){
                     value += rTapTest(landsDown, [handLands[0], handLands[1] + 1], handCurve.slice(), [deckLands[0], deckLands[1] - 1], deckNL, deckCurve.slice(), deckRemaining - 1, wildcards, wildPicks, turnsRemaining - 1) * (deckLands[1] / deckRemaining);
-                probs += (deckLands[1] / deckRemaining);
                 }
-                
+                // for the cards that are no longer wildcards, we need to test whether they have been drawn individually
                 for(let i = 1; handCurve[i] != undefined; i++){
                     if(deckCurve[i] > 0){
                         let newDeckCurve = deckCurve.slice();
@@ -1401,15 +1398,11 @@
                         let newHandCurve = handCurve.slice();
                         newHandCurve[i] += 1;
                         value += rTapTest(landsDown, handLands.slice(), newHandCurve, deckLands.slice(), deckNL - 1, newDeckCurve, deckRemaining - 1, wildcards, wildPicks, turnsRemaining - 1) * (deckCurve[i] / deckRemaining);
-                        probs += (deckCurve[i] / deckRemaining);
                     }
                 }
+                // draw wildcards
                 if(wildPicks > 0){
                     value += rTapTest(landsDown, handLands.slice(), handCurve.slice(), deckLands.slice(), deckNL, deckCurve.slice(), deckRemaining - 1, wildcards + 1, wildPicks - 1, turnsRemaining - 1) * (wildPicks / deckRemaining);
-                    probs += (wildPicks / deckRemaining);
-                }
-                if(probs > 1.01 || probs < 0.99){
-                    console.log("Uh-oh");
                 }
             }
             return value;
