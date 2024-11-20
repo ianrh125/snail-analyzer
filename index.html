@@ -765,6 +765,10 @@
 
         // pings the server with the user's decklist, unpacks and stores the result
         async function loadDict(){
+            
+            //remove previous error messages
+            clearError("load-result-box");
+
             L = document.getElementById('decklist').value;
             let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "");
             if(sanitizedL != lastDecklist){
@@ -943,6 +947,20 @@
             error.innerText = errorText;
             error.classList.add("error-text");
             document.getElementById(resultBox).appendChild(error);
+        }
+
+        function clearError(resultBox){
+            let result = document.getElementById(resultBox);
+            let i = 0;
+            while(i < result.children.length){
+                let child = result.children[i];
+                if(child.classList.contains("error-text")){
+                    result.removeChild(child);
+                }
+                else{
+                    i++;
+                }
+            }
         }
 
         // procedurally add rows to the analysis output table
@@ -1161,6 +1179,9 @@
             let landTypesBackup = landTypes.slice();
             let startTime = Date.now();
 
+            //remove previous errors
+            clearError("color-analyzer-result-box");
+
             //create a fresh table for the analysis output
             let table = document.getElementById("output-table");
             if(table != null){
@@ -1184,6 +1205,9 @@
                 addError("color-analyzer-result-box", "Error: Land impact analysis cancelled, predicted runtime too high");
                 return;
             }
+
+            landCount = landCountBackup;
+            landTypes = landTypesBackup;
 
             // calculate for +1 wastes variant
             table.appendChild(testVariant("+1 Wastes", createDiff([[0, 1]]), baseRate, baseDelay));
@@ -1443,6 +1467,9 @@
             var textType = Node.textContent ? 'textContent' : 'innerText',
                 result = document.getElementById('tap-analyzer-result'),
                 turns = parseFloat(document.getElementById('tap-turns').value) || 5;
+            
+            //remove previous errors
+            clearError("tap-analyzer-result-box");
             
             let tapTotal = 0;
             let untapTotal = 0;
