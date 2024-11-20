@@ -1183,7 +1183,7 @@
             clearError("color-analyzer-result-box");
 
             //create a fresh table for the analysis output
-            let table = document.getElementById("output-table");
+            let table = document.getElementById("color-output-table");
             if(table != null){
                 table.remove();
             }
@@ -1201,7 +1201,7 @@
             if(endTime - startTime > 1500){
                 console.log(`Execution time: ${endTime - startTime} ms`);
                 //result[textType] = result[textType] + "\nLand impact analysis cancelled, predicted runtime too high";
-                document.getElementById("analyzer-result-box").appendChild(table);
+                document.getElementById("color-analyzer-result-box").appendChild(table);
                 addError("color-analyzer-result-box", "Error: Land impact analysis cancelled, predicted runtime too high");
                 return;
             }
