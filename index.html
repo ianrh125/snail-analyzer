@@ -161,6 +161,8 @@
         var commander2;
         var lastDecklist;
 
+        var tapAnalDict;
+
         function fact(x){
             let y = x
             while(x>2){
@@ -1354,7 +1356,7 @@
             }
             console.log(value / turns);*/
             let start = Date.now();
-            let value = tapTestWrapper(tapTotal, curve, nonland, Math.min(turns, 5));
+            let value = tapTestWrapper(tapTotal, curve, nonland, turns, 100000);
             console.log("Elapsed time: " + (Date.now()-start) + "ms");
             //console.log(value);
             return(value);
@@ -1362,28 +1364,44 @@
 
         // wrapper for tapTest
         // run rTapTest() on every combination of tapped and untapped lands that can be drawn and compile results
-        function tapTestWrapper(tapTotal, curve, nonland, maxTurns){
+        function tapTestWrapper(tapTotal, curve, nonland, maxTurns, span){
             let value = 0;
             let deckLands = [tapTotal, landCount - tapTotal];
             let myMullLands = landsAtTurn(1); // post-mulligan land distribution plus first draw
+            iterations = 0;
+            tapAnalDict = new Map();
+            let min = 0;
             // iterate through each number of lands that can be drawn
             for(let i = 0; i <= 6; i++){
                 // iterate through each number of drawn lands that enter tapped
                 for(let j = 0; j <= i && j <= tapTotal; j++){
-                    value += rTapTest(0, [j, i-j], new Array(curve.length), [deckLands[0] - j, deckLands[1] - i + j], nonland, curve, landCount + nonland - 8, 8-i, nonland - 8 + i, maxTurns - 1) * myMullLands[i] * drawType(landCount, tapTotal, i, j);
+                    let max = min + span * myMullLands[i] * drawType(landCount, tapTotal, i, j);
+                    value += rTapTest(0, [j, i-j], new Array(curve.length), [deckLands[0] - j, deckLands[1] - i + j], nonland, curve, landCount + nonland - 8, 8-i, nonland - 8 + i, maxTurns - 1, min, max);
+                    min = max;
                 }
             }
-            return value;
+            console.log("Iterations: " + iterations);
+            return value / span;
         }
 
         // given a deck's curve, number of lands, number of tap lands, and the contents of the current hand, calculate how much mana worth of spells the deck will be able to cast within a certain number of turns
         // This explores all the possible options and adds them together based on their relative probabilities
         // in order to save computation, this uses a "wildcard" system for cards that are too expensive to cast, treating them as a single category when drawing cards
         // when more mana becomes available, it uses drawType() to determine how many of the wildcards it can now afford.
-        function rTapTest(landsDown, handLands, handCurve, deckLands, deckNL, deckCurve, deckRemaining, wildcards, wildPicks, turnsRemaining){
+        function rTapTest(landsDown, handLands, handCurve, deckLands, deckNL, deckCurve, deckRemaining, wildcards, wildPicks, turnsRemaining, min, max){
+            /*let inputToKey = [landsDown, handLands, handCurve, deckLands, deckNL, deckCurve, deckRemaining, wildcards, wildPicks, turnsRemaining].toString();
+            if(tapAnalDict.has(inputToKey)){
+                return tapAnalDict.get(inputToKey);
+            }
+            else{*/
+            let span = max - min;
+            if(Math.floor(max) == Math.floor(min)){
+                return 0;
+            }
             if(turnsRemaining == undefined){
                 console.log("Uh-oh");
             }
+            iterations++;
             // the mana we can work with is based on the number of lands played already plus our ability to play an untapped land
             let mana = landsDown + Math.sign(handLands[1]);
             // If this gives us access to cards that we couldn't previously afford, we need to see how many of them we have
@@ -1400,12 +1418,15 @@
                     if(commander2 != undefined && commander2.colorCost.t == cmc){
                         commanders += 1;
                     }
+                    let newMin = min;
                     for(let i = Math.max(0, deckCurve[cmc] - wildPicks); i <= wildcards && i <= deckCurve[cmc]; i++){
                         let newDeckCurve = deckCurve.slice();
                         newDeckCurve[cmc] -= i;
                         let newHandCurve = handCurve.slice();
                         newHandCurve[cmc] = commanders + i;
-                        value += rTapTest(landsDown, handLands.slice(), newHandCurve, deckLands.slice(), deckNL - i, newDeckCurve, deckRemaining, wildcards - i, wildPicks - newDeckCurve[cmc], turnsRemaining) * drawType(wildPicks + wildcards, deckCurve[cmc], wildcards, i);
+                        let newMax = newMin + span * drawType(wildPicks + wildcards, deckCurve[cmc], wildcards, i);
+                        value += rTapTest(landsDown, handLands.slice(), newHandCurve, deckLands.slice(), deckNL - i, newDeckCurve, deckRemaining, wildcards - i, wildPicks - newDeckCurve[cmc], turnsRemaining, newMin, newMax);
+                        newMin = newMax;
                         //value += (turnsRemaining + 1) * drawType(wildPicks, deckCurve[mana], wildcards, i);
                     }
                     return value;
@@ -1435,15 +1456,20 @@
                 handLands[1]--;
                 landsDown++;
             }
-
+            value *= (turnsRemaining + 1) * (Math.floor(max) - Math.floor(min));
             // branch based on card drawn next
             if(turnsRemaining > 0){
                 // if we can draw lands of either type, draw and calculate the probability
-                if(deckLands[0] > 0){ 
-                    value += rTapTest(landsDown, [handLands[0] + 1, handLands[1]], handCurve.slice(), [deckLands[0] - 1, deckLands[1]], deckNL, deckCurve.slice(), deckRemaining - 1, wildcards, wildPicks, turnsRemaining - 1) * (deckLands[0] / deckRemaining);
+                let newMin = min;
+                if(deckLands[0] > 0){
+                    let newMax = newMin + span * (deckLands[0] / deckRemaining);
+                    value += rTapTest(landsDown, [handLands[0] + 1, handLands[1]], handCurve.slice(), [deckLands[0] - 1, deckLands[1]], deckNL, deckCurve.slice(), deckRemaining - 1, wildcards, wildPicks, turnsRemaining - 1, newMin, newMax);
+                    newMin = newMax;
                 }
                 if(deckLands[1] > 0){
-                    value += rTapTest(landsDown, [handLands[0], handLands[1] + 1], handCurve.slice(), [deckLands[0], deckLands[1] - 1], deckNL, deckCurve.slice(), deckRemaining - 1, wildcards, wildPicks, turnsRemaining - 1) * (deckLands[1] / deckRemaining);
+                    let newMax = newMin + span * (deckLands[1] / deckRemaining);
+                    value += rTapTest(landsDown, [handLands[0], handLands[1] + 1], handCurve.slice(), [deckLands[0], deckLands[1] - 1], deckNL, deckCurve.slice(), deckRemaining - 1, wildcards, wildPicks, turnsRemaining - 1, newMin, newMax);
+                    newMin = newMax;
                 }
                 // for the cards that are no longer wildcards, we need to test whether they have been drawn individually
                 for(let i = 1; handCurve[i] != undefined; i++){
@@ -1452,15 +1478,21 @@
                         newDeckCurve[i] -= 1;
                         let newHandCurve = handCurve.slice();
                         newHandCurve[i] += 1;
-                        value += rTapTest(landsDown, handLands.slice(), newHandCurve, deckLands.slice(), deckNL - 1, newDeckCurve, deckRemaining - 1, wildcards, wildPicks, turnsRemaining - 1) * (deckCurve[i] / deckRemaining);
+                        let newMax = newMin + span * (deckCurve[i] / deckRemaining);
+                        value += rTapTest(landsDown, handLands.slice(), newHandCurve, deckLands.slice(), deckNL - 1, newDeckCurve, deckRemaining - 1, wildcards, wildPicks, turnsRemaining - 1, newMin, newMax);
+                        newMin = newMax;
                     }
                 }
                 // draw wildcards
                 if(wildPicks > 0){
-                    value += rTapTest(landsDown, handLands.slice(), handCurve.slice(), deckLands.slice(), deckNL, deckCurve.slice(), deckRemaining - 1, wildcards + 1, wildPicks - 1, turnsRemaining - 1) * (wildPicks / deckRemaining);
+                    let newMax = newMin + span * (wildPicks / deckRemaining);
+                    value += rTapTest(landsDown, handLands.slice(), handCurve.slice(), deckLands.slice(), deckNL, deckCurve.slice(), deckRemaining - 1, wildcards + 1, wildPicks - 1, turnsRemaining - 1, newMin, newMax);
+                    newMin = newMax;
                 }
             }
+            //tapAnalDict.set(inputToKey,value);
             return value;
+            //}
         }
 
         function tapTest(){
