@@ -1105,6 +1105,26 @@
                     //console.log(deckList[i].mana_cost + ": " + iterations);
                 }
             }
+            if(commander1){
+                let pips = colorReqs(commander1.colorCost);
+                let pipCode = pipsToNum(pips);
+                if(!manaDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    manaDict.set(pipCode, castDistro.slice());
+                    //console.log(deckList[i].mana_cost + ": " + iterations);
+                }
+            }
+            if(commander2){
+                let pips = colorReqs(commander2.colorCost);
+                let pipCode = pipsToNum(pips);
+                if(!manaDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    manaDict.set(pipCode, castDistro.slice());
+                    //console.log(deckList[i].mana_cost + ": " + iterations);
+                }
+            }
             // now that all of the mana values are calculated for and added to the dictionary, add up all the relevant info and return it
             let costsCovered = new Set();
             let cmcOnCurve = 0;
@@ -1122,6 +1142,32 @@
                     if(!costsCovered.has(deckList[i].mana_cost)){
                         costsCovered.add(deckList[i].mana_cost);
                     }
+                }
+            }
+            if(commander1){
+                let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
+                let turnCastDist = turnsToCast(commander1.colorCost)
+                let cmc = Math.min(commander1.colorCost.t, 10);
+                let onCurveRate = turnCastDist[cmc];
+                let avgDelay = mean(turnCastDist) - commander1.colorCost.t;
+                cmcOnCurve += onCurveRate * cmc * weight;
+                totalCmcDelay += avgDelay * cmc * weight;
+                totalCmc += cmc * weight;
+                if(!costsCovered.has(commander1.mana_cost)){
+                    costsCovered.add(commander1.mana_cost);
+                }
+            }
+            if(commander2){
+                let weight = document.getElementById("cmdr2-weight").selectedOptions[0].value;
+                let turnCastDist = turnsToCast(commander2.colorCost)
+                let cmc = Math.min(commander2.colorCost.t, 10);
+                let onCurveRate = turnCastDist[cmc];
+                let avgDelay = mean(turnCastDist) - commander2.colorCost.t;
+                cmcOnCurve += onCurveRate * cmc * weight;
+                totalCmcDelay += avgDelay * cmc * weight;
+                totalCmc += cmc * weight;
+                if(!costsCovered.has(commander2.mana_cost)){
+                    costsCovered.add(commander2.mana_cost);
                 }
             }
             cmcOnCurve /= totalCmc;
@@ -1537,8 +1583,23 @@
         <p class="prompt"> Paste your decklist here </p>
         <textarea id="decklist" rows="10" cols="50" placeholder="Paste your exported decklist here (format: '1 sol ring')"></textarea>
         <p class="prompt"> Name of commander(s) </p>
-        <input type="text" id="commander-name-1" placeholder="Commander">
-        <input type="text" id="commander-name-2" placeholder="Companion/Partner">
+        <p><input type="text" id="commander-name-1" placeholder="Commander">
+        <input type="text" id="commander-name-2" placeholder="Partner/Companion"></p>
+        <label for="commander">How important is your commander to your deck?</label>
+        <select name="commander" id="cmdr1-weight">
+            <option value="10">Just another card</option>
+            <option value="20">A nice bonus for a deck that is still functional without it</option>
+            <option value="30">A major boost for a deck that would struggle without it</option>
+            <option value="50">A critical piece for a deck that would fall flat without it</option>
+        </select>
+        <br><br>
+        <label for="partner">How important is your partner/companion to your deck?</label>
+        <select name="partner" id="cmdr2-weight">
+            <option value="10">Just another card</option>
+            <option value="20">A nice bonus for a deck that is still functional without it</option>
+            <option value="30">A major boost for a deck that would struggle without it</option>
+            <option value="50">A critical piece for a deck that would fall flat without it</option>
+        </select>
         <p>
             <input type="button" value="Load" onclick="loadDict()">
         </p>
@@ -1547,6 +1608,7 @@
         </div>
     </div>
     <div class="analyzer" name="colorCalc">
+        <p class="title"> Color Analyzer</p>
         <div id="approx-config" hidden>
             <p>It looks like your deck has 4 or more colors. The time it takes to fully evaluate the support for a card increases exponentially with the number of colors in its mana cost. It might take a few seconds to complete the analysis. These settings can also help with this by using imperfect estimates for the most time-consuming cards:</p>
             <p class="prompt"> Estimate cards with <input type="text" id="approx-colors" value="5" style="width: 30px"> or more colors </p>
@@ -1554,7 +1616,6 @@
             <p class="prompt"> Estimation samples </p>
             <input type="text" id="approx-samples" value="10000">
         </div>
-        <p class="title"> Color Analyzer</p>
         <p>
             <input type="button" id="color-compute-button" value="Compute" onclick="colorTest()">
         </p>    
