@@ -882,7 +882,7 @@
                         commander1found += 1;
                     }
                     else if(card.name.includes(commanderName2)){
-                        commander1 = card;
+                        commander2 = card;
                         console.log("commander 2: " + card.name);
                         commander2found += 1;
                     }
@@ -981,7 +981,7 @@
         }
 
         // batching all those little functions up into one big "run the analysis" function
-        function deepAnal(){
+        function deepAnal(individualResults){
             let textOut = "";
             manaDict = new Map();
             calcMullLands();
@@ -1130,20 +1130,7 @@
             let cmcOnCurve = 0;
             let totalCmcDelay = 0;
             let totalCmc = 0;
-            for(let i = 0; i < deckList.length; i++){
-                if(!deckList[i].card_type.includes("Land")){
-                    let turnCastDist = turnsToCast(deckList[i].colorCost)
-                    let cmc = Math.min(deckList[i].colorCost.t, 10);
-                    let onCurveRate = turnCastDist[cmc];
-                    let avgDelay = mean(turnCastDist) - deckList[i].colorCost.t;
-                    cmcOnCurve += onCurveRate * cmc;
-                    totalCmcDelay += avgDelay * cmc;
-                    totalCmc += cmc;
-                    if(!costsCovered.has(deckList[i].mana_cost)){
-                        costsCovered.add(deckList[i].mana_cost);
-                    }
-                }
-            }
+            let allCards = new Array();
             if(commander1){
                 let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
                 let turnCastDist = turnsToCast(commander1.colorCost)
@@ -1156,6 +1143,7 @@
                 if(!costsCovered.has(commander1.mana_cost)){
                     costsCovered.add(commander1.mana_cost);
                 }
+                allCards.push([commander1.name, onCurveRate, avgDelay]);
             }
             if(commander2){
                 let weight = document.getElementById("cmdr2-weight").selectedOptions[0].value;
@@ -1169,12 +1157,31 @@
                 if(!costsCovered.has(commander2.mana_cost)){
                     costsCovered.add(commander2.mana_cost);
                 }
+                allCards.push([commander2.name, onCurveRate, avgDelay]);
+            }
+            for(let i = 0; i < deckList.length; i++){
+                if(!deckList[i].card_type.includes("Land")){
+                    let turnCastDist = turnsToCast(deckList[i].colorCost)
+                    let cmc = Math.min(deckList[i].colorCost.t, 10);
+                    let onCurveRate = turnCastDist[cmc];
+                    let avgDelay = mean(turnCastDist) - deckList[i].colorCost.t;
+                    cmcOnCurve += onCurveRate * cmc;
+                    totalCmcDelay += avgDelay * cmc;
+                    totalCmc += cmc;
+                    if(!costsCovered.has(deckList[i].mana_cost)){
+                        costsCovered.add(deckList[i].mana_cost);
+                        allCards.push([deckList[i].name, onCurveRate, avgDelay]);
+                    }
+                }
             }
             cmcOnCurve /= totalCmc;
             totalCmcDelay /= totalCmc;
             console.log("curve rate: " + cmcOnCurve);
             console.log("average delay: " + totalCmcDelay);
-            return [cmcOnCurve, totalCmcDelay, textOut];
+            if(individualResults){
+                return [cmcOnCurve, totalCmcDelay, allCards];
+            }
+            return [cmcOnCurve, totalCmcDelay];
         }
 
         function testVariant(name, landDiff, baseRate, baseDelay){
@@ -1214,6 +1221,71 @@
             return diff;
         }
 
+        function cardCompare(a, b){
+            if(commander1){
+                if(a[0] == commander1.name){
+                    return -1;
+                }
+                if(b[0] == commander1.name){
+                    return 1;
+                }
+            }
+            if(commander2){
+                if(a[0] == commander2.name){
+                    return -1;
+                }
+                if(b[0] == commander2.name){
+                    return 1;
+                }
+            }
+            if(a[2] < b[2]){
+                return 1;
+            }
+            if(a[2] > b[2]){
+                return -1;
+            }
+            return 0;
+            
+        }
+
+        function reduceName(name, maxLength){
+            if(name.length > maxLength){
+                let newName = name;
+                if(newName.includes(", ")){
+                    newName = newName.substring(0, newName.indexOf(", "));
+                }
+                if(newName.includes(" of ")){
+                    newName = newName.substring(0, newName.indexOf(" of "));
+                }
+                if(newName.includes(" the ")){
+                    newName = newName.substring(0, newName.indexOf(" the "));
+                }
+                let matches = 0;
+                for(let i = 0; i < cardList.length; i++){
+                    if(cardList[i].includes(newName)){
+                        matches += 1;
+                    }
+                }
+                if (matches != 1 || newName.length > maxLength - 3){
+                    while(newName.length > maxLength - 3){
+                        if(newName.includes(" ")){
+                            newName = newName.substring(0, newName.lastIndexOf(" "));
+                        }
+                        else{
+                            newName = newName.substring(0, maxLength - 3);
+                        }
+                    }
+                    newName = newName + "...";
+                }
+                return newName;
+            }
+            return name;
+        }
+        function reduceMana(mana){
+            return mana.replace("{W}","W").replace("{U}","U").replace("{B}","B").replace("{R}","R").replace("{G}","G")
+                .replace("{1}","1").replace("{2}","2").replace("{3}","3").replace("{4}","4").replace("{5}","5")
+                .replace("{6}","6").replace("{7}","7").replace("{8}","8").replace("{9}","9");
+        }
         // this is the one tied to the compute button
         function colorTest(){
             // grab input from calculator
@@ -1240,9 +1312,10 @@
             table.appendChild(tableRow(["Manabase Variation", "Cast Rate", "Average Delay"], "th"));
 
             // run analysis on base deck
-            let analResult = deepAnal();
+            let analResult = deepAnal(true);
             let baseRate = analResult[0];
             let baseDelay = analResult[1];
+            let allCards = analResult[2];
             table.appendChild(tableRow(["Current Manabase", (baseRate * 100).toFixed(1) + "%", baseDelay.toFixed(3)], "td"));
 
             let endTime = Date.now();
@@ -1276,6 +1349,22 @@
                 table.appendChild(testVariant("+1 Mountain", createDiff([[16, 1]]), baseRate, baseDelay));
             }
             document.getElementById("color-analyzer-result-box").appendChild(table);
+
+            let cardTable = document.getElementById("color-card-table");
+            if(cardTable != null){
+                cardTable.remove();
+            }
+            cardTable = document.createElement("table");
+            cardTable.id = "color-card-table";
+            cardTable.appendChild(tableRow(["Card Name", "Cost", "Cast Rate", "Average Delay"], "th"));
+
+            allCards = allCards.sort(cardCompare);
+
+            for(let i = 0; i < 10; i++){
+                cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(testDict[allCards[i][0]].mana_cost), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td"));
+            }
+
+            document.getElementById("color-analyzer-result-box").appendChild(cardTable);
 
             endTime = Date.now();
             console.log(`Execution time: ${endTime - startTime} ms`);
