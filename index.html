@@ -82,9 +82,16 @@
             border: 2px solid rgb(80 80 80);
             border-collapse: collapse;
             border-spacing: 0;
+            width: 100%;
+        }
+        .tab-table{
+            border-top: none;
         }
         th {
             border: 1px solid rgb(120 120 120);
+            /*border-top: none;*/
+            /*outline: 1px solid rgb(120 120 120);*/
+            background-color: #ddd;
             padding-top: 3px;
             padding-bottom: 3px;
             padding-left: 5px;
@@ -108,7 +115,7 @@
         }
         .info-box{
             width: 800px;
-            border: 1px solid black;
+            border: 0.5px solid black;
             background-color: #EEEEEE;
             padding: 10px; /* giving text room */
             margin: 5px; 
@@ -130,6 +137,48 @@
             /*margin-left: 0px;*/
             /*display: inline-block;*/
             float:left;
+        }
+        .tab {
+            overflow: hidden;
+            /*border: 1px solid #ccc;*/
+            border:none;
+            background-color: #f1f1f1;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            border-bottom: none;
+        }
+
+        /* Style the buttons inside the tab */
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: 1px solid black;
+            border-bottom: none;
+            outline: none;
+            cursor: pointer;
+            padding: 3px 7px;
+            transition: 0.3s;
+            font-size: 15px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+            background-color: #ccc;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+            background-color: #ddd;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
         }
     </style>
 </head>
@@ -1251,7 +1300,7 @@
         function reduceName(name, maxLength){
             if(name.length > maxLength){
                 let newName = name;
-                if(newName.includes(", ")){
+                /*if(newName.includes(", ")){
                     newName = newName.substring(0, newName.indexOf(", "));
                 }
                 if(newName.includes(" of ")){
@@ -1265,8 +1314,8 @@
                     if(cardList[i].includes(newName)){
                         matches += 1;
                     }
-                }
-                if (matches != 1 || newName.length > maxLength - 3){
+                }*/
+                //if (matches != 1 || newName.length > maxLength - 3){
                     while(newName.length > maxLength - 3){
                         if(newName.includes(" ")){
                             newName = newName.substring(0, newName.lastIndexOf(" "));
@@ -1275,8 +1324,8 @@
                             newName = newName.substring(0, maxLength - 3);
                         }
                     }
-                    newName = newName + "...";
-                }
+                //}
+                newName = newName + "...";
                 return newName;
             }
             return name;
@@ -1285,6 +1334,60 @@
             return mana.replace("{W}","W").replace("{U}","U").replace("{B}","B").replace("{R}","R").replace("{G}","G")
                 .replace("{1}","1").replace("{2}","2").replace("{3}","3").replace("{4}","4").replace("{5}","5")
                 .replace("{6}","6").replace("{7}","7").replace("{8}","8").replace("{9}","9");
+        }
+
+        function createTableTab(id, parent, buttonContents, tableContents){
+
+            let outerDiv = document.getElementById(id);
+            if(outerDiv != null){
+                outerDiv.remove();
+            }
+            outerDiv = document.createElement("div");
+            outerDiv.id = id;
+
+            let buttonDiv = document.createElement("div");
+            buttonDiv.classList.add("tab");
+
+            for(let i = 0; i < buttonContents.length; i++){
+                let newButton = document.createElement("button");
+                newButton.innerText=buttonContents[i];
+                newButton.addEventListener('click', function(evt){switchTableTab(evt.currentTarget.id)});
+                newButton.onclick="switchTableTab(" + id + ", " + i + ")";
+                newButton.id = id+"-button-"+i;
+                newButton.classList.add(id+"-button");
+                buttonDiv.appendChild(newButton);
+            }
+
+            outerDiv.appendChild(buttonDiv);
+
+            for(let i = 0; i < tableContents.length; i++){
+                let newTable = tableContents[i];
+                newTable.id = id+"-table-"+i;
+                newTable.style.border_top = "none";
+                newTable.classList.add("tab-table");
+                newTable.classList.add(id+"-table");
+                outerDiv.appendChild(newTable);
+            }
+
+            document.getElementById(parent).appendChild(outerDiv);
+            switchTableTab(id + "-button-0");
+        }
+
+        function switchTableTab(buttonId){
+            let id = buttonId.substring(0,buttonId.indexOf("-button-"));
+            let tabNum = buttonId.substring(buttonId.lastIndexOf("-")+1);
+            let tables = document.getElementsByClassName(id + "-table");
+            for(let i = 0; i < tables.length; i++){
+                tables[i].style.display = "none";
+            }
+
+            let tablinks = document.getElementsByClassName(id + "-button");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            document.getElementById(id+"-table-"+tabNum).style.display = "table";
+            document.getElementById(buttonId).className += " active";
         }
         // this is the one tied to the compute button
         function colorTest(){
@@ -1346,9 +1449,9 @@
                 table.appendChild(testVariant("+1 Mountain", createDiff([[8, 1]]), baseRate, baseDelay));
             }
             if(green > 0){
-                table.appendChild(testVariant("+1 Mountain", createDiff([[16, 1]]), baseRate, baseDelay));
+                table.appendChild(testVariant("+1 Forest", createDiff([[16, 1]]), baseRate, baseDelay));
             }
-            document.getElementById("color-analyzer-result-box").appendChild(table);
+            //document.getElementById("color-analyzer-result-box").appendChild(table);
 
             let cardTable = document.getElementById("color-card-table");
             if(cardTable != null){
@@ -1356,7 +1459,7 @@
             }
             cardTable = document.createElement("table");
             cardTable.id = "color-card-table";
-            cardTable.appendChild(tableRow(["Card Name", "Cost", "Cast Rate", "Average Delay"], "th"));
+            cardTable.appendChild(tableRow(["Card Name", "Cost", "Cast Rate", "Avg. Delay"], "th"));
 
             allCards = allCards.sort(cardCompare);
 
@@ -1364,7 +1467,9 @@
                 cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(testDict[allCards[i][0]].mana_cost), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td"));
             }
 
-            document.getElementById("color-analyzer-result-box").appendChild(cardTable);
+            //document.getElementById("color-analyzer-result-box").appendChild(cardTable);
+
+            createTableTab("color-test", "color-analyzer-result-box", ["Overall Performance", "Individual Cards"], [table, cardTable]);
 
             endTime = Date.now();
             console.log(`Execution time: ${endTime - startTime} ms`);
@@ -1679,7 +1784,7 @@
             <option value="10">Just another card</option>
             <option value="20">A nice bonus for a deck that is still functional without it</option>
             <option value="30">A major boost for a deck that would struggle without it</option>
-            <option value="50">A critical piece for a deck that would fall flat without it</option>
+            <option value="50">A critical piece of a deck that would fall flat without it</option>
         </select>
         <br><br>
         <label for="partner">How important is your partner/companion to your deck?</label>
@@ -1687,7 +1792,7 @@
             <option value="10">Just another card</option>
             <option value="20">A nice bonus for a deck that is still functional without it</option>
             <option value="30">A major boost for a deck that would struggle without it</option>
-            <option value="50">A critical piece for a deck that would fall flat without it</option>
+            <option value="50">A critical piece of a deck that would fall flat without it</option>
         </select>
         <p>
             <input type="button" value="Load" onclick="loadDict()">
