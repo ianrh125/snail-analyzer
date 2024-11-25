@@ -310,7 +310,11 @@
         
         // converts the color costs of a card into an int from 0-31 representing 5 boolean values 
         function processCost(cost){
-            return Math.sign(cost.w) + 2 * Math.sign(cost.u) + 4 * Math.sign(cost.b) + 8 * Math.sign(cost.r) + 16 * Math.sign(cost.g);
+            return Math.sign(cost.w + cost.wu + cost.wb + cost.wr + cost.wg)
+                 + 2 * Math.sign(cost.u + cost.wu + cost.ub + cost.ur + cost.ug)
+                 + 4 * Math.sign(cost.b + cost.wb + cost.ub + cost.br + cost.bg)
+                 + 8 * Math.sign(cost.r + cost.wr + cost.ur + cost.br + cost.rg)
+                 + 16 * Math.sign(cost.g + cost.wg + cost.ug + cost.bg + cost.rg);
         }
 
         // count the number of colors in a card's mana cost
@@ -325,13 +329,25 @@
                 u: cost.u,
                 b: cost.b,
                 r: cost.r,
-                g: cost.g
+                g: cost.g,
+                wu: cost.wu,
+                wb: cost.wb,
+                wr: cost.wr,
+                wg: cost.wg,
+                ub: cost.ub,
+                ur: cost.ur,
+                ug: cost.ug,
+                br: cost.br,
+                bg: cost.bg,
+                rg: cost.rg
             };
         }
 
         // Encode the color pips of a mana cost as an integer using prime factors
         function pipsToNum(cost){
-            return 2 ** cost.w * 3 ** cost.u * 5 ** cost.b * 7 ** cost.r * 11 ** cost.g;
+            return 2 ** cost.w * 3 ** cost.u * 5 ** cost.b * 7 ** cost.r * 11 ** cost.g
+                * 13 ** cost.wu * 17 ** cost.wb * 19 ** cost.wr * 23 ** cost.wg * 29 ** cost.ub
+                * 31 ** cost.ur * 37 ** cost.ug * 41 ** cost.br * 43 ** cost.bg * 47 ** cost.rg;
         }
 
         // Prime factorize an encoded cost to regain the pips
@@ -725,16 +741,16 @@
             let comboReqs = new Array(32).fill(0);
             comboReqs[1] = cost.w;
             for(let i = 2; i < 4; i++){
-                comboReqs[i] = comboReqs[i - 2] + cost.u;
+                comboReqs[i] = comboReqs[i - 2] + cost.u + cost.wu * Math.sign(i & 1);
             }
             for(let i = 4; i < 8; i++){
-                comboReqs[i] = comboReqs[i - 4] + cost.b;
+                comboReqs[i] = comboReqs[i - 4] + cost.b + cost.wb * Math.sign(i & 1) + cost.ub * Math.sign(i & 2);
             }
             for(let i = 8; i < 16; i++){
-                comboReqs[i] = comboReqs[i - 8] + cost.r;
+                comboReqs[i] = comboReqs[i - 8] + cost.r + cost.wr * Math.sign(i & 1) + cost.ur * Math.sign(i & 2) + cost.br * Math.sign(i & 4);
             }
             for(let i = 16; i < 32; i++){
-                comboReqs[i] = comboReqs[i - 16] + cost.g;
+                comboReqs[i] = comboReqs[i - 16] + cost.g + cost.wg * Math.sign(i & 1) + cost.ug * Math.sign(i & 2) + cost.bg * Math.sign(i & 4) + cost.rg * Math.sign(i & 8);
             }
             return comboReqs;
         }
@@ -749,7 +765,8 @@
                 pipReqs = twoDropDict.get(pipsToNum(cost)).slice();
             }
             else{
-                pipReqs = manaDict.get(pipsToNum(cost)).slice();
+                let numfromPips = pipsToNum(cost)
+                pipReqs = manaDict.get(numfromPips).slice();
             }
             for(let i = 0; i < cost.t; i++){
                 pipReqs[i] = 0;
@@ -881,7 +898,7 @@
                 else{
                     card.name = name;
                     let cost = card.mana_cost;
-                    let colorCost = {w:0, u:0, b:0, r:0, g:0, c:0, t:0};
+                    let colorCost = {w:0, u:0, b:0, r:0, g:0, wu:0, wb:0, wr:0, wg:0, ub:0, ur:0, ug:0, br:0, bg:0, rg:0, c:0, t:0};
                     costList = cost.substring(1, cost.length-1).split('}{');
                     // read in individual pips from mana cost
                     for(let i = 0; i < costList.length; i++){
@@ -909,6 +926,36 @@
                             green += count;
                             total += count;
                             colorCost.g += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'W/U'){
+                            colorCost.wu += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'W/B'){
+                            colorCost.wb += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'R/W'){
+                            colorCost.wr += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'G/W'){
+                            colorCost.wg += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'U/B'){
+                            colorCost.ub += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'U/R'){
+                            colorCost.ur += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'G/U'){
+                            colorCost.ug += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'B/R'){
+                            colorCost.br += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'B/G'){
+                            colorCost.bg += count;
+                            colorCost.t += count;
+                        } else if(costList[i] == 'R/G'){
+                            colorCost.rg += count;
                             colorCost.t += count;
                         } else if(parseInt(costList[i]) > 0){
                             generic += parseInt(costList[i]);
