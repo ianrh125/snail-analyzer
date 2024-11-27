@@ -885,6 +885,23 @@
                 let count = parseInt(name.substring(0,cut));
                 name = name.substring(cut+1);
                 let card = testDict[name];
+
+                white += card.mana_cost.split("{W}").length - 1;
+                blue += card.mana_cost.split("{U}").length - 1;
+                black += card.mana_cost.split("{B}").length - 1;
+                red += card.mana_cost.split("{R}").length - 1;
+                green += card.mana_cost.split("{G}").length - 1;
+            }
+
+            for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
+                let name = cardList[c];
+                let cut = 0
+                while(name.charAt(cut) != ' '){
+                    cut++;
+                }
+                let count = parseInt(name.substring(0,cut));
+                name = name.substring(cut+1);
+                let card = testDict[name];
                 // Handle exceptions
                 if(card == "NOT FOUND"){
                     addError("load-result-box", "Error: \"" + name + "\" is not in our databse or Scryfall. This may be due to a typo");
@@ -903,27 +920,22 @@
                     // read in individual pips from mana cost
                     for(let i = 0; i < costList.length; i++){
                         if(costList[i] == 'W'){
-                            white += count;
                             total += count;
                             colorCost.w += count;
                             colorCost.t += count;
                         } else if(costList[i] == 'U'){
-                            blue += count;
                             total += count;
                             colorCost.u += count;
                             colorCost.t += count;
                         } else if(costList[i] == 'B'){
-                            black += count;
                             total += count;
                             colorCost.b += count;
                             colorCost.t += count;
                         } else if(costList[i] == 'R'){
-                            red += count;
                             total += count;
                             colorCost.r += count;
                             colorCost.t += count;
                         } else if(costList[i] == 'G'){
-                            green += count;
                             total += count;
                             colorCost.g += count;
                             colorCost.t += count;
@@ -983,18 +995,39 @@
                         commander2found += 1;
                     }
                     else if(card.card_type.includes("Land")){
+                        let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
+                        let landIndex = findLandIndex(card.mana_source) & deckColors;
                         // handle fetches
                         if(card.mana_source.fetch){
-                            deckColors = Math.sign(white) + Math.sign(blue) + Math.sign(black) + Math.sign(red) + Math.sign(green);
-                            if(deckColors >= 3){
-                                sourceMult = 0.67;
+                            landTypes[landIndex] += count * 0.5;
+                            let colors = Math.sign(landIndex & 1) + Math.sign(landIndex & 2) + Math.sign(landIndex & 4) + Math.sign(landIndex & 8) + Math.sign(landIndex & 16);
+                            if(card.mana_source.w && white > 0){
+                                landTypes[1] += count * 0.5 / colors;
                             }
+                            if(card.mana_source.u && blue > 0){
+                                landTypes[2] += count * 0.5 / colors;
+                            }
+                            if(card.mana_source.b && black > 0){
+                                landTypes[4] += count * 0.5 / colors;
+                            }
+                            if(card.mana_source.r && red > 0){
+                                landTypes[8] += count * 0.5 / colors;
+                            }
+                            if(card.mana_source.g && green > 0){
+                                landTypes[16] += count * 0.5 / colors;
+                            }
+                            landCount += count;
+                            deckList.push(card);
+                            /*if(deckColors >= 3){
+                                sourceMult = 0.67;
+                            }*/
                         }
-                        let landIndex = findLandIndex(card.mana_source);
-                        landTypes[landIndex] += count * sourceMult;
-                        landTypes[0] += count * (1-sourceMult);
-                        landCount += count;
-                        deckList.push(card);
+                        else{
+                            landTypes[landIndex] += count * sourceMult;
+                            landTypes[0] += count * (1-sourceMult);
+                            landCount += count;
+                            deckList.push(card);
+                        }                        
                     } else{
                         deckList.push(card);
                     }
@@ -1378,7 +1411,7 @@
             return name;
         }
         function reduceMana(mana){
-            return mana.replace("{W}","W").replace("{U}","U").replace("{B}","B").replace("{R}","R").replace("{G}","G")
+            return mana.replaceAll("{W}","W").replaceAll("{U}","U").replaceAll("{B}","B").replaceAll("{R}","R").replaceAll("{G}","G")
                 .replace("{1}","1").replace("{2}","2").replace("{3}","3").replace("{4}","4").replace("{5}","5")
                 .replace("{6}","6").replace("{7}","7").replace("{8}","8").replace("{9}","9");
         }
