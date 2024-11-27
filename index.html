@@ -1155,6 +1155,7 @@
                         }
                     }
                     if(landIndex != 0){
+                        typeMult *= turnsToCast(deckList[i].colorCost)[1];
                         landTypes[landIndex] += deckList[i].count * typeMult;
                         landCount += deckList[i].count * typeMult;
                         //console.log("SOURCE: " + cardList[i]);
@@ -1206,6 +1207,7 @@
                         }
                     }
                     if(landIndex != 0){
+                        typeMult *= turnsToCast(deckList[i].colorCost)[2];
                         landTypes[landIndex] += deckList[i].count * typeMult;
                         landCount += deckList[i].count * typeMult;
                         //console.log("SOURCE: " + cardList[i]);
