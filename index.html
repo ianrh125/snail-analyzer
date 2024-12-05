@@ -832,6 +832,54 @@
         }
 
         // pings the server with the user's decklist, unpacks and stores the result
+        function getColorCost(cost){
+            let cc = {
+                w: cost.split("{W}").length - 1,
+                u: cost.split("{U}").length - 1,
+                b: cost.split("{B}").length - 1,
+                r: cost.split("{R}").length - 1,
+                g: cost.split("{G}").length - 1,
+                wu: cost.split("{W/U}").length - 1,
+                wb: cost.split("{W/B}").length - 1,
+                wr: cost.split("{R/W}").length - 1,
+                wg: cost.split("{G/W}").length - 1,
+                ub: cost.split("{U/B}").length - 1,
+                ur: cost.split("{U/R}").length - 1,
+                ug: cost.split("{G/U}").length - 1,
+                br: cost.split("{B/R}").length - 1,
+                bg: cost.split("{B/G}").length - 1,
+                rg: cost.split("{R/G}").length - 1,
+                c: parseInt(cost.substring(1, cost.length-1).split('}{')[0]) || 0
+            };
+            cc.t = cc.w + cc.u + cc.b + cc.r + cc.g + cc.wu + cc.wb + cc.wr + cc.wg + cc.ub + cc.ur + cc.ug + cc.br + cc.bg + cc.rg + cc.c;
+            return cc;
+            
+        }
+
+        function getFetchEquivalent(source){
+            let myLandTypes = new Array(32).fill(0);
+            let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
+            let landIndex = findLandIndex(source) & deckColors;
+            myLandTypes[landIndex] += 0.5;
+            let colors = Math.sign(landIndex & 1) + Math.sign(landIndex & 2) + Math.sign(landIndex & 4) + Math.sign(landIndex & 8) + Math.sign(landIndex & 16);
+            if(source.w && white > 0){
+                myLandTypes[1] += 0.5 / colors;
+            }
+            if(source.u && blue > 0){
+                myLandTypes[2] += 0.5 / colors;
+            }
+            if(source.b && black > 0){
+                myLandTypes[4] += 0.5 / colors;
+            }
+            if(source.r && red > 0){
+                myLandTypes[8] += 0.5 / colors;
+            }
+            if(source.g && green > 0){
+                myLandTypes[16] += 0.5 / colors;
+            }
+            return myLandTypes;
+        }
+        
         async function loadDict(){
             
             //remove previous error messages
@@ -915,70 +963,7 @@
                 else{
                     card.name = name;
                     let cost = card.mana_cost;
-                    let colorCost = {w:0, u:0, b:0, r:0, g:0, wu:0, wb:0, wr:0, wg:0, ub:0, ur:0, ug:0, br:0, bg:0, rg:0, c:0, t:0};
-                    costList = cost.substring(1, cost.length-1).split('}{');
-                    // read in individual pips from mana cost
-                    for(let i = 0; i < costList.length; i++){
-                        if(costList[i] == 'W'){
-                            total += count;
-                            colorCost.w += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'U'){
-                            total += count;
-                            colorCost.u += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'B'){
-                            total += count;
-                            colorCost.b += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'R'){
-                            total += count;
-                            colorCost.r += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'G'){
-                            total += count;
-                            colorCost.g += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'W/U'){
-                            colorCost.wu += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'W/B'){
-                            colorCost.wb += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'R/W'){
-                            colorCost.wr += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'G/W'){
-                            colorCost.wg += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'U/B'){
-                            colorCost.ub += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'U/R'){
-                            colorCost.ur += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'G/U'){
-                            colorCost.ug += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'B/R'){
-                            colorCost.br += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'B/G'){
-                            colorCost.bg += count;
-                            colorCost.t += count;
-                        } else if(costList[i] == 'R/G'){
-                            colorCost.rg += count;
-                            colorCost.t += count;
-                        } else if(parseInt(costList[i]) > 0){
-                            generic += parseInt(costList[i]);
-                            total += parseInt(costList[i]);
-                            colorCost.c += count;
-                            colorCost.t += parseInt(costList[i]);
-                        } else{
-                            // there are edge cases, but I don't want to think about them at this very moment
-                            //console.log(name+costList[i]);
-                        }
-                    }
+                    let colorCost = getColorCost(cost);
                     card.colorCost = colorCost;
                     let sourceMult = 1;
                     card.count = count;
@@ -995,26 +980,11 @@
                         commander2found += 1;
                     }
                     else if(card.card_type.includes("Land")){
-                        let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
-                        let landIndex = findLandIndex(card.mana_source) & deckColors;
                         // handle fetches
                         if(card.mana_source.fetch){
-                            landTypes[landIndex] += count * 0.5;
-                            let colors = Math.sign(landIndex & 1) + Math.sign(landIndex & 2) + Math.sign(landIndex & 4) + Math.sign(landIndex & 8) + Math.sign(landIndex & 16);
-                            if(card.mana_source.w && white > 0){
-                                landTypes[1] += count * 0.5 / colors;
-                            }
-                            if(card.mana_source.u && blue > 0){
-                                landTypes[2] += count * 0.5 / colors;
-                            }
-                            if(card.mana_source.b && black > 0){
-                                landTypes[4] += count * 0.5 / colors;
-                            }
-                            if(card.mana_source.r && red > 0){
-                                landTypes[8] += count * 0.5 / colors;
-                            }
-                            if(card.mana_source.g && green > 0){
-                                landTypes[16] += count * 0.5 / colors;
+                            let addLandTypes = getFetchEquivalent(card.mana_source);
+                            for(let i = 0; i < 32; i++){
+                                landTypes[i] += addLandTypes[i] * count;
                             }
                             landCount += count;
                             deckList.push(card);
@@ -1023,6 +993,8 @@
                             }*/
                         }
                         else{
+                            let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
+                            let landIndex = findLandIndex(card.mana_source) & deckColors;
                             landTypes[landIndex] += count * sourceMult;
                             landTypes[0] += count * (1-sourceMult);
                             landCount += count;
@@ -1109,35 +1081,36 @@
             return newRow;
         }
 
-        // batching all those little functions up into one big "run the analysis" function
-        function deepAnal(individualResults){
-            let textOut = "";
-            manaDict = new Map();
-            calcMullLands();
-
-            /*console.log("lands: " + landCount);
-            console.log(landTypes.slice());
-            console.log(mullLands);
-            console.log(landsAtTurn(1));*/
-            
-            //calculate for one drops based on mana from lands
-            oneDropDict = new Map();
+        function xDropDict(x){
+            let dict = new Map();
             for(let i = 0; i < deckList.length; i++){
-                if(deckList[i].colorCost.t == 1){
+                if(deckList[i].colorCost.t == x){
                     let pips = colorReqs(deckList[i].colorCost);
                     let pipCode = pipsToNum(pips);
-                    if(!oneDropDict.has(pipCode)){
+                    if(!dict.has(pipCode)){
                         iterations = 0;
                         castDistro = pipDist(pips);
-                        oneDropDict.set(pipCode, castDistro.slice());
+                        dict.set(pipCode, castDistro.slice());
+                        //console.log(deckList[i].mana_cost + ": " + iterations);
+                    }
+                }
+                else if(deckList[i].mana_source.cycling != false && getColorCost(deckList[i].mana_source.cycling.cost).t == x){
+                    let pips = colorReqs(getColorCost(deckList[i].mana_source.cycling.cost));
+                    let pipCode = pipsToNum(pips);
+                    if(!dict.has(pipCode)){
+                        iterations = 0;
+                        castDistro = pipDist(pips);
+                        dict.set(pipCode, castDistro.slice());
                         //console.log(deckList[i].mana_cost + ": " + iterations);
                     }
                 }
             }
+            return dict;
+        }
 
-            //scan one drops for mana sources
+        function scanForSources(x){
             for(let i = 0; i < deckList.length; i++){
-                if(deckList[i].colorCost.t == 1){
+                if(deckList[i].colorCost.t == x){
                     let landIndex = findLandIndex(deckList[i].mana_source);
                     let typeMult = 1;
                     if(deckList[i].card_type.includes("Artifact")){
@@ -1155,7 +1128,7 @@
                         }
                     }
                     if(landIndex != 0){
-                        typeMult *= turnsToCast(deckList[i].colorCost)[1];
+                        typeMult *= turnsToCast(deckList[i].colorCost)[x];
                         landTypes[landIndex] += deckList[i].count * typeMult;
                         landCount += deckList[i].count * typeMult;
                         //console.log("SOURCE: " + cardList[i]);
@@ -1164,7 +1137,34 @@
                         //console.log("NO SOURCE: " + cardList[i]);
                     }
                 }
+                else if(deckList[i].mana_source.cycling != false && getColorCost(deckList[i].mana_source.cycling.cost).t == x){
+                    if(deckList[i].mana_source.cycling.lands != false){
+                        let typeMult = turnsToCast(getColorCost(deckList[i].mana_source.cycling.cost))[x];
+                        let addLandTypes = getFetchEquivalent(deckList[i].mana_source.cycling.lands);
+                        for(let i = 0; i < 32; i++){
+                            landTypes[i] += addLandTypes[i] * deckList[i].count * typeMult;
+                        }
+                        landCount += deckList[i].count * typeMult;
+                    }
+                }
             }
+        }
+        // batching all those little functions up into one big "run the analysis" function
+        function deepAnal(individualResults){
+            let textOut = "";
+            manaDict = new Map();
+            calcMullLands();
+
+            //console.log("lands: " + landCount);
+            /*console.log(landTypes.slice());
+            console.log(mullLands);
+            console.log(landsAtTurn(1));*/
+            
+            //calculate for one drops based on mana from lands
+            oneDropDict = xDropDict(1);
+
+            //scan one drops for mana sources
+            scanForSources(1);
 
             //console.log("lands: " + landCount);
             //console.log(landTypes.slice());
@@ -1173,52 +1173,12 @@
             //console.log(landsAtTurn(1));
 
             //calculate for two drops based on mana from lands and one drops
-            twoDropDict = new Map();
-            for(let i = 0; i < deckList.length; i++){
-                if(deckList[i].colorCost.t == 2){
-                    let pips = colorReqs(deckList[i].colorCost);
-                    let pipCode = pipsToNum(pips);
-                    if(!twoDropDict.has(pipCode)){
-                        iterations = 0;
-                        castDistro = pipDist(pips);
-                        twoDropDict.set(pipCode, castDistro.slice());
-                        //console.log(deckList[i].mana_cost + ": " + iterations);
-                    }
-                }
-            }
+            twoDropDict = xDropDict(2);
 
             //scan two drops for mana sources
-            for(let i = 0; i < deckList.length; i++){
-                if(deckList[i].colorCost.t == 2){
-                    let landIndex = findLandIndex(deckList[i].mana_source);
-                    let typeMult = 1;
-                    if(deckList[i].card_type.includes("Artifact")){
-                        typeMult = 0.75;
-                    }
-                    if(deckList[i].card_type.includes("Creature")){
-                        typeMult = 0.5;
-                    }
-                    if(deckList[i].mana_source.fetch){
-                        if(deckColors >= 3){
-                            typeMult = 0.67;
-                        }
-                        else{
-                            typeMult = 1;
-                        }
-                    }
-                    if(landIndex != 0){
-                        typeMult *= turnsToCast(deckList[i].colorCost)[2];
-                        landTypes[landIndex] += deckList[i].count * typeMult;
-                        landCount += deckList[i].count * typeMult;
-                        //console.log("SOURCE: " + cardList[i]);
-                    }
-                    else{
-                        //console.log("NO SOURCE: " + cardList[i]);
-                    }
-                }
-            }
+            scanForSources(2);
 
-            //console.log("lands: " + landCount);
+            console.log("lands: " + landCount);
             //console.log(landTypes.slice());
             calcMullLands(landCount);
             //console.log(mullLands);
@@ -1545,7 +1505,7 @@
 
             allCards = allCards.sort(cardCompare);
 
-            for(let i = 0; i < 10; i++){
+            for(let i = 0; i < Math.min(allCards.length, 10); i++){
                 cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(testDict[allCards[i][0]].mana_cost), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td"));
             }
 
