@@ -194,6 +194,7 @@
         var manaDict;
         var oneDropDict;
         var twoDropDict;
+        var threeDropDict;
         var mullLands;
 
         var white;
@@ -764,6 +765,9 @@
             else if(cost.t == 2){
                 pipReqs = twoDropDict.get(pipsToNum(cost)).slice();
             }
+            else if(cost.t == 3){
+                pipReqs = threeDropDict.get(pipsToNum(cost)).slice();
+            }
             else{
                 let numfromPips = pipsToNum(cost)
                 pipReqs = manaDict.get(numfromPips).slice();
@@ -1178,13 +1182,16 @@
             //scan two drops for mana sources
             scanForSources(2);
 
-            console.log("lands: " + landCount);
+            //console.log("lands: " + landCount);
             //console.log(landTypes.slice());
             calcMullLands(landCount);
             //console.log(mullLands);
+
+            threeDropDict = xDropDict(3);
+            scanForSources(3);
+            calcMullLands(landCount);
             
-            // calculate for 3 and above based on lands, 1, and 2
-            // maybe I should account for 3 on its own first. 3 mana ramp is definitely a thing
+            // calculate for 4 and above based on lands, 1, 2, and 3
             for(let i = 0; i < deckList.length; i++){
                 
                 let pips = colorReqs(deckList[i].colorCost);
