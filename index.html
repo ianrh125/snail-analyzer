@@ -211,6 +211,12 @@
         var commander2;
         var lastDecklist;
 
+        var plainsTypes;
+        var islandTypes;
+        var swampTypes;
+        var mountainTypes;
+        var forestTypes;
+
         var tapAnalDict;
 
         function fact(x){
@@ -255,6 +261,7 @@
         // These drawType functions are the foundation of most of the tools. They seem to be working well for me, but it might be good to be extra sure they're working right
         // given deck size, type count, draw size, and quota, calculates the chance of drawing exactly the quota of that type
         function drawType(allTotal, typeTotal, allDrawn, typeDrawn){
+            //let x = choose(allTotal-typeTotal, allDrawn-typeDrawn)*choose(typeTotal, typeDrawn)/choose(allTotal, allDrawn);
             let x = quickChoose(allTotal-typeTotal, allDrawn-typeDrawn)*quickChoose(typeTotal, typeDrawn)/quickChoose(allTotal, allDrawn);
             return x;
         }
@@ -484,7 +491,7 @@
                 approxColors = 5;
             }
             if(approxSamples == undefined){
-                approxSamples = 10000;
+                approxSamples = 100000;
             }
             // filter and round lands for given color combination
             let roundedLands = roundLands(landFilter(cost));
@@ -495,12 +502,12 @@
             // run 2 different versions of the analysis program, 1 that estimates for expensive cards, one that does the perfect computation for cheap cards.
             if(numColors(cost) < approxColors){
                 for(let n = 0; n <= 10; n++){
-                    result = rLandTest(cost, roundedLands, n, roundedLandCount, 31, [], 1, structuredClone(comboReqs));
+                    result = rLandTest(cost, roundedLands, n, roundedLandCount, 31, 1, structuredClone(comboReqs));
                     canCast[n] = result;
                 }
             }else{
                 for(let n = 0; n <= 10; n++){
-                    result = landTestUniformSample(cost, roundedLands, n, roundedLandCount, 31, [], 0, approxSamples, structuredClone(comboReqs));
+                    result = landTestUniformSample(cost, roundedLands, n, roundedLandCount, 31, 0, approxSamples, structuredClone(comboReqs));
                     canCast[n] = (result / approxSamples);
                 }
             }
@@ -599,7 +606,7 @@
         // Recursively testing different combinations of lands
         // Moving through the list of possible land types, if one is present in the deck, calculate the different possibilities for how many are in there.
         // Then adjust the numbers to feed back into rLandTest to account for the rest
-        function rLandTest(cost, myLandTypes, numLands, myLandCount, i, pickedLands, scale, comboReqs){
+        function rLandTest(cost, myLandTypes, numLands, myLandCount, i, scale, comboReqs){
             // check if mana requirements are already satisfied
             if(Math.max(...comboReqs) <= 0){
                 return 1;
@@ -632,10 +639,9 @@
             for(let n = 0; n <= numLands && n <= myLandTypes[i]; n++){
                 let p = drawType(myLandCount, myLandTypes[i], numLands, n);
                 if(p > 0){
-                    result = rLandTest(cost, myLandTypes.slice(), numLands - n, myLandCount - myLandTypes[i], i-1, structuredClone(pickedLands), p * scale, structuredClone(comboReqs));
+                    result = rLandTest(cost, myLandTypes, numLands - n, myLandCount - myLandTypes[i], i-1, p * scale, comboReqs.slice());
                     success += p * result;
                 }
-                pickedLands.push(i);
                 for(let j = 0; j < 32; j++){
                     comboReqs[j] -= Math.sign(j & i); //if the color output overlaps with the requirement, decrement the requirement
                 }
@@ -669,7 +675,7 @@
         // Instead of counting the exact proportions of each probability, it counts the number of "ticks" on the line within its slice of the line
         // Thus, it will give near-perfect estimations for probabilities that are well above the line's "resolution"
         // And for probabilities that are well below it, it functions more like a random sample
-        function landTestUniformSample(cost, myLandTypes, numLands, myLandCount, i, pickedLands, min, max, comboReqs){
+        function landTestUniformSample(cost, myLandTypes, numLands, myLandCount, i, min, max, comboReqs){
             if(Math.floor(max) == Math.floor(min)){
                 // no ticks in range
                 return 0;
@@ -707,9 +713,8 @@
                     newMin = newMax;
                     newMax += p * span;
                     totalP += p;
-                    success += landTestUniformSample(cost, myLandTypes, numLands - n, myLandCount - myLandTypes[i], i-1, structuredClone(pickedLands), newMin, newMax, structuredClone(comboReqs));
+                    success += landTestUniformSample(cost, myLandTypes, numLands - n, myLandCount - myLandTypes[i], i-1, newMin, newMax, comboReqs.slice());
                 }
-                pickedLands.push(i);
                 for(let j = 0; j < 32; j++){
                     comboReqs[j] -= Math.sign(j & i);
                 }
@@ -913,6 +918,12 @@
             let pb = 0;
             let pr = 0;
             let pg = 0;
+            
+            plainsTypes = new Array(32).fill(0);
+            islandTypes = new Array(32).fill(0);
+            swampTypes = new Array(32).fill(0);
+            mountainTypes = new Array(32).fill(0);
+            forestTypes = new Array(32).fill(0);
 
             landTypes = new Array(32).fill(0);
             landCount = 0;
@@ -1000,10 +1011,26 @@
                             let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
                             let landIndex = findLandIndex(card.mana_source) & deckColors;
                             landTypes[landIndex] += count * sourceMult;
-                            landTypes[0] += count * (1-sourceMult);
+                            //landTypes[0] += count * (1-sourceMult);
                             landCount += count;
                             deckList.push(card);
-                        }                        
+
+                            if(card.card_type.includes("Plains")){
+                                plainsTypes[landIndex] = 1;
+                            }
+                            if(card.card_type.includes("Island")){
+                                islandTypes[landIndex] = 1;
+                            }
+                            if(card.card_type.includes("Swamp")){
+                                swampTypes[landIndex] = 1;
+                            }
+                            if(card.card_type.includes("Mountain")){
+                                mountainTypes[landIndex] = 1;
+                            }
+                            if(card.card_type.includes("Forest")){
+                                forestTypes[landIndex] = 1;
+                            }
+                        }    
                     } else{
                         deckList.push(card);
                     }
@@ -1026,7 +1053,7 @@
 
             // turn on estimation config options for players with 4 or 5 color decks
             deckColors = Math.sign(white) + Math.sign(blue) + Math.sign(black) + Math.sign(red) + Math.sign(green);
-            if(deckColors >= 4){
+            if(deckColors >= 5){
                 let configOptions = document.getElementById("approx-config");
                 configOptions.hidden = false;
             }
@@ -1853,11 +1880,11 @@
     <div class="analyzer" name="colorCalc">
         <p class="title"> Color Analyzer</p>
         <div id="approx-config" hidden>
-            <p>It looks like your deck has 4 or more colors. The time it takes to fully evaluate the support for a card increases exponentially with the number of colors in its mana cost. It might take a few seconds to complete the analysis. These settings can also help with this by using imperfect estimates for the most time-consuming cards:</p>
+            <p>It looks like your deck has 5 colors. This makes the analysis more complicated, so it may take a few seconds. These settings can also save time by using imperfect estimates for the most time-consuming cards:</p>
             <p class="prompt"> Estimate cards with <input type="text" id="approx-colors" value="5" style="width: 30px"> or more colors </p>
             
             <p class="prompt"> Estimation samples </p>
-            <input type="text" id="approx-samples" value="10000">
+            <input type="text" id="approx-samples" value="100000">
         </div>
         <p>
             <input type="button" id="color-compute-button" value="Compute" onclick="colorTest()">
