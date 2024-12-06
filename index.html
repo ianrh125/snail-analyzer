@@ -869,22 +869,51 @@
             let myLandTypes = new Array(32).fill(0);
             let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
             let landIndex = findLandIndex(source) & deckColors;
-            myLandTypes[landIndex] += 0.5;
-            let colors = Math.sign(landIndex & 1) + Math.sign(landIndex & 2) + Math.sign(landIndex & 4) + Math.sign(landIndex & 8) + Math.sign(landIndex & 16);
-            if(source.w && white > 0){
-                myLandTypes[1] += 0.5 / colors;
+            if(source.fetch == "b"){
+                myLandTypes[landIndex] += 0.5;
+                let colors = Math.sign(landIndex & 1) + Math.sign(landIndex & 2) + Math.sign(landIndex & 4) + Math.sign(landIndex & 8) + Math.sign(landIndex & 16);
+                if(source.w && white > 0){
+                    myLandTypes[1] += 0.5 / colors;
+                }
+                if(source.u && blue > 0){
+                    myLandTypes[2] += 0.5 / colors;
+                }
+                if(source.b && black > 0){
+                    myLandTypes[4] += 0.5 / colors;
+                }
+                if(source.r && red > 0){
+                    myLandTypes[8] += 0.5 / colors;
+                }
+                if(source.g && green > 0){
+                    myLandTypes[16] += 0.5 / colors;
+                }
             }
-            if(source.u && blue > 0){
-                myLandTypes[2] += 0.5 / colors;
-            }
-            if(source.b && black > 0){
-                myLandTypes[4] += 0.5 / colors;
-            }
-            if(source.r && red > 0){
-                myLandTypes[8] += 0.5 / colors;
-            }
-            if(source.g && green > 0){
-                myLandTypes[16] += 0.5 / colors;
+            else if(source.fetch == "nb"){
+                //myLandTypes[landIndex] += 0.5;
+                let colors = Math.sign(landIndex & 1) + Math.sign(landIndex & 2) + Math.sign(landIndex & 4) + Math.sign(landIndex & 8) + Math.sign(landIndex & 16);
+                let canFetch = new Array(32).fill(false);
+                let canFetch2 = new Array(32).fill(false);
+                let myIndex = landIndex
+                for(let i = 0; i < 32; i++){
+                    canFetch[i] = (plainsTypes[i] && source.w) || (islandTypes[i] && source.u) || (swampTypes[i] && source.b) || (mountainTypes[i] && source.r)  || (forestTypes[i] && source.g);
+                    if(canFetch[i]){
+                        //if current options include a land that isn't part of my index, include it in my index
+                        myIndex = myIndex | i;
+                        //if current options include a land just like this with one less color, remove it
+                        canFetch[i & 30] = canFetch[i & 30] && !(i & 1);
+                        canFetch[i & 29] = canFetch[i & 29] && !(i & 2);
+                        canFetch[i & 27] = canFetch[i & 27] && !(i & 4);
+                        canFetch[i & 23] = canFetch[i & 23] && !(i & 8);
+                        canFetch[i & 15] = canFetch[i & 15] && !(i & 16);
+                    }
+                }
+                myLandTypes[myIndex] += 0.5;
+                let numOptions = sum(canFetch);
+                for(let i = 0; i < 32; i++){
+                    if(canFetch[i]){
+                        myLandTypes[i] += 0.5 / numOptions;
+                    }
+                }
             }
             return myLandTypes;
         }
@@ -919,11 +948,11 @@
             let pr = 0;
             let pg = 0;
             
-            plainsTypes = new Array(32).fill(0);
-            islandTypes = new Array(32).fill(0);
-            swampTypes = new Array(32).fill(0);
-            mountainTypes = new Array(32).fill(0);
-            forestTypes = new Array(32).fill(0);
+            plainsTypes = new Array(32).fill(false);
+            islandTypes = new Array(32).fill(false);
+            swampTypes = new Array(32).fill(false);
+            mountainTypes = new Array(32).fill(false);
+            forestTypes = new Array(32).fill(false);
 
             landTypes = new Array(32).fill(0);
             landCount = 0;
@@ -954,6 +983,26 @@
                 black += card.mana_cost.split("{B}").length - 1;
                 red += card.mana_cost.split("{R}").length - 1;
                 green += card.mana_cost.split("{G}").length - 1;
+
+                if(card.card_type.includes("Land")){                
+                    let landIndex = findLandIndex(card.mana_source);
+                    //landTypes[0] += count * (1-sourceMult);
+                    if(card.card_type.includes("Plains")){
+                        plainsTypes[landIndex] = true;
+                    }
+                    if(card.card_type.includes("Island")){
+                        islandTypes[landIndex] = true;
+                    }
+                    if(card.card_type.includes("Swamp")){
+                        swampTypes[landIndex] = true;
+                    }
+                    if(card.card_type.includes("Mountain")){
+                        mountainTypes[landIndex] = true;
+                    }
+                    if(card.card_type.includes("Forest")){
+                        forestTypes[landIndex] = true;
+                    }
+                }
             }
 
             for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
@@ -998,6 +1047,8 @@
                         // handle fetches
                         if(card.mana_source.fetch){
                             let addLandTypes = getFetchEquivalent(card.mana_source);
+                            console.log(card.name + ": " + addLandTypes[0] + " " + addLandTypes[1] + " " + addLandTypes[2] + " " + addLandTypes[4] + " " + addLandTypes[8] + " " + addLandTypes[16]);
+                            console.log(addLandTypes);
                             for(let i = 0; i < 32; i++){
                                 landTypes[i] += addLandTypes[i] * count;
                             }
@@ -1011,25 +1062,10 @@
                             let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
                             let landIndex = findLandIndex(card.mana_source) & deckColors;
                             landTypes[landIndex] += count * sourceMult;
+                            console.log(card.name + ": " + landIndex);
                             //landTypes[0] += count * (1-sourceMult);
                             landCount += count;
                             deckList.push(card);
-
-                            if(card.card_type.includes("Plains")){
-                                plainsTypes[landIndex] = 1;
-                            }
-                            if(card.card_type.includes("Island")){
-                                islandTypes[landIndex] = 1;
-                            }
-                            if(card.card_type.includes("Swamp")){
-                                swampTypes[landIndex] = 1;
-                            }
-                            if(card.card_type.includes("Mountain")){
-                                mountainTypes[landIndex] = 1;
-                            }
-                            if(card.card_type.includes("Forest")){
-                                forestTypes[landIndex] = 1;
-                            }
                         }    
                     } else{
                         deckList.push(card);
@@ -1151,14 +1187,13 @@
                         typeMult = 0.5;
                     }
                     if(deckList[i].mana_source.fetch){
-                        if(deckColors >= 3){
-                            typeMult = 0.67;
+                        let addLandTypes = getFetchEquivalent(deckList[i].mana_source);
+                        for(let i = 0; i < 32; i++){
+                            landTypes[i] += addLandTypes[i] * deckList[i].count;
                         }
-                        else{
-                            typeMult = 1;
-                        }
+                        landCount += deckList[i].count;
                     }
-                    if(landIndex != 0){
+                    else if(landIndex != 0){
                         typeMult *= turnsToCast(deckList[i].colorCost)[x];
                         landTypes[landIndex] += deckList[i].count * typeMult;
                         landCount += deckList[i].count * typeMult;
