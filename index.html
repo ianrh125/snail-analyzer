@@ -497,16 +497,16 @@
             let roundedLands = roundLands(landFilter(cost));
             let roundedLandCount = sum(roundedLands);
 
-            let canCast = new Array(11);
+            let canCast = new Array(13);
             let comboReqs = getComboReqs(cost);
             // run 2 different versions of the analysis program, 1 that estimates for expensive cards, one that does the perfect computation for cheap cards.
             if(numColors(cost) < approxColors){
-                for(let n = 0; n <= 10; n++){
+                for(let n = 0; n <= 12; n++){
                     result = rLandTest(cost, roundedLands, n, roundedLandCount, 31, 1, structuredClone(comboReqs));
                     canCast[n] = result;
                 }
             }else{
-                for(let n = 0; n <= 10; n++){
+                for(let n = 0; n <= 12; n++){
                     result = landTestUniformSample(cost, roundedLands, n, roundedLandCount, 31, 0, approxSamples, structuredClone(comboReqs));
                     canCast[n] = (result / approxSamples);
                 }
@@ -593,10 +593,10 @@
 
         // 
         function landsAtTurn(turn){
-            let landDist = new Array(11).fill(0);
+            let landDist = new Array(13).fill(0);
             for(let startLands = 0; startLands < 7; startLands++){
                 for(let drawnLands = 0; drawnLands <= turn; drawnLands++){
-                    landDist[Math.min(startLands + drawnLands, 10)] += mullLands[startLands] * drawType(92 - turn, landCount - startLands, turn, drawnLands);
+                    landDist[Math.min(startLands + drawnLands, 12)] += mullLands[startLands] * drawType(92 - turn, landCount - startLands, turn, drawnLands);
                 }
             }
             return landDist;
@@ -804,17 +804,17 @@
             return landIndex
         }
 
-        // using the distributions of how many lands are required to cast a given spell and how many are available at a given turn, find the pdf on casting a spell on turns 1-10
+        // using the distributions of how many lands are required to cast a given spell and how many are available at a given turn, find the pdf on casting a spell on turns 1-12
         function turnsToCast(cost){
             let landReqs = landsToCast(cost);
-            let canCast = new Array(11);
+            let canCast = new Array(16);
             for(let i = 0; i < cost.t; i++){
                 canCast[i] = 0;
             }
-            for(let i = cost.t; i <= 10; i++){
+            for(let i = cost.t; i <= 15; i++){
                 pCast = 0;
                 let landDist = landsAtTurn(i);
-                for(let lands = cost.t; lands <= 10; lands++){
+                for(let lands = cost.t; lands <= 12; lands++){
                     //pCast += landReqs[lands] * drawType(99, landCount, i + 7, lands);
                     pCast += landReqs[lands] * landDist[lands];
                     //pCast += drawType(99, landCount, i + 7, lands);
@@ -823,12 +823,12 @@
                 //pCast += drawTypeMin(99, landCount, i + 7, 10);
                 canCast[i] = pCast
             }
-            let pdf = new Array(11);
+            let pdf = new Array(16);
             pdf[0] = canCast[0];
-            for(let i = 1; i < 10; i++){
+            for(let i = 1; i < 15; i++){
                 pdf[i] = canCast[i] - canCast[i-1];
             }
-            pdf[10] = 1-canCast[9];
+            pdf[15] = 1-canCast[14];
             return pdf;
         }
 
@@ -1293,8 +1293,9 @@
             let allCards = new Array();
             if(commander1){
                 let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
-                let turnCastDist = turnsToCast(commander1.colorCost)
-                let cmc = Math.min(commander1.colorCost.t, 10);
+                let turnCastDist = turnsToCast(commander1.colorCost);
+                console.log(landsToCast(commander1.colorCost));
+                let cmc = Math.min(commander1.colorCost.t, 12);
                 let onCurveRate = turnCastDist[cmc];
                 let avgDelay = mean(turnCastDist) - commander1.colorCost.t;
                 cmcOnCurve += onCurveRate * cmc * weight;
@@ -1308,7 +1309,7 @@
             if(commander2){
                 let weight = document.getElementById("cmdr2-weight").selectedOptions[0].value;
                 let turnCastDist = turnsToCast(commander2.colorCost)
-                let cmc = Math.min(commander2.colorCost.t, 10);
+                let cmc = Math.min(commander2.colorCost.t, 12);
                 let onCurveRate = turnCastDist[cmc];
                 let avgDelay = mean(turnCastDist) - commander2.colorCost.t;
                 cmcOnCurve += onCurveRate * cmc * weight;
@@ -1322,7 +1323,7 @@
             for(let i = 0; i < deckList.length; i++){
                 if(!deckList[i].card_type.includes("Land")){
                     let turnCastDist = turnsToCast(deckList[i].colorCost)
-                    let cmc = Math.min(deckList[i].colorCost.t, 10);
+                    let cmc = Math.min(deckList[i].colorCost.t, 12);
                     let onCurveRate = turnCastDist[cmc];
                     let avgDelay = mean(turnCastDist) - deckList[i].colorCost.t;
                     cmcOnCurve += onCurveRate * cmc;
@@ -1507,7 +1508,7 @@
                 L = document.getElementById('decklist').value,
                 result = document.getElementById('color-analyzer-result');
             
-            approxColors = parseFloat(document.getElementById('approx-colors').value) || 10000;
+            approxColors = parseFloat(document.getElementById('approx-colors').value) || 100000;
             approxSamples = parseFloat(document.getElementById('approx-samples').value) || 5;
             let landCountBackup = landCount;
             let landTypesBackup = landTypes.slice();
@@ -1681,12 +1682,12 @@
 
         function findCurveDensity(tapTotal, turns){
             let nonland = 0;
-            let curve = new Array(11).fill(0);
+            let curve = new Array(13).fill(0);
             let maxMana = 0;
             for(let i = 0; i < deckList.length; i++){
                 if(!deckList[i].card_type.includes("Land")){
-                    if(deckList[i].colorCost.t > 10){
-                        curve[10]++;
+                    if(deckList[i].colorCost.t > 12){
+                        curve[12]++;
                         nonland++;
                     }
                     else{
