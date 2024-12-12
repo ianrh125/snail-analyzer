@@ -942,16 +942,27 @@
             clearError("load-result-box");
 
             L = document.getElementById('decklist').value;
-            let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "");
-            if(sanitizedL != lastDecklist){
+            let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "").replaceAll(/#.*\n/g, "\n");
+            let splitL = sanitizedL.split("\n");
+            let strippedL = "";
+            for(let i = 0; i < splitL.length; i++){
+                if(splitL[i] == "Sideboard"){
+                    break;
+                }
+                let first = splitL[i].charAt(0);
+                if(first >= '1' && first <= '9'){
+                    strippedL = strippedL + splitL[i] + "\n";
+                }
+            }
+            if(strippedL != lastDecklist){
                 console.log('loading');
-                var response = await fetch('https://api.salubrioussnail.com/?cards=' + sanitizedL);
+                var response = await fetch('https://api.salubrioussnail.com/?cards=' + strippedL);
                 console.log('loaded');
                 testDict = await response.json();
             }
-            lastDecklist = sanitizedL;
+            lastDecklist = strippedL;
 
-            cardList = sanitizedL.split('\n');
+            cardList = strippedL.split('\n');
             deckList = [];
             white = 0;
             blue = 0;
@@ -1090,8 +1101,8 @@
                     }
                 }
                 
-                
             }
+            console.log("lands: " + landCount);
             if(commanderName1 != "nocard" && commander1found == 0){
                 addError("load-result-box", "Error: the name \"" + commanderName1 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
             }
@@ -1301,17 +1312,46 @@
             if(commander1){
                 let pips = colorReqs(commander1.colorCost);
                 let pipCode = pipsToNum(pips);
-                if(!manaDict.has(pipCode)){
+                if(commander1.colorCost.t == 1 && !oneDropDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    oneDropDict.set(pipCode, castDistro.slice());
+                }
+                else if(commander1.colorCost.t == 2 && !twoDropDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    twoDropDict.set(pipCode, castDistro.slice());
+                }
+                else if(commander1.colorCost.t == 3 && !threeDropDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    threeDropDict.set(pipCode, castDistro.slice());
+                }
+                else if(!manaDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     manaDict.set(pipCode, castDistro.slice());
-                    //console.log(deckList[i].mana_cost + ": " + iterations);
                 }
             }
             if(commander2){
                 let pips = colorReqs(commander2.colorCost);
                 let pipCode = pipsToNum(pips);
-                if(!manaDict.has(pipCode)){
+                if(commander2.colorCost.t == 1 && !oneDropDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    oneDropDict.set(pipCode, castDistro.slice());
+                }
+                else if(commander2.colorCost.t == 2 && !twoDropDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    twoDropDict.set(pipCode, castDistro.slice());
+                }
+                else if(commander2.colorCost.t == 3 && !threeDropDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    threeDropDict.set(pipCode, castDistro.slice());
+                }
+                else if(!manaDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     manaDict.set(pipCode, castDistro.slice());
