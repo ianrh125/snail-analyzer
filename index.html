@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
+        html{
+            box-sizing: border-box;
+        }
+
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
         /* changing font for all text */
         body{
             font-family: Arial, Helvetica, sans-serif;
@@ -45,8 +52,11 @@
             border: 2px solid black;
             border-radius: 10px; /* round corners */
             padding: 10px; /* giving text room */
-            margin: 10px; /* spacing calculators apart */
+            /*margin: 8px;*/ /* spacing calculators apart */
+            margin-right:15px;
+            margin-bottom:15px;
             width: 500px; /* change if needed,  */
+            max-width: 100%;
             float:left;
             /*display: inline-block; /* let them show side by side */
         }
@@ -179,6 +189,14 @@
             padding: 6px 12px;
             border: 1px solid #ccc;
             border-top: none;
+        }
+
+        textarea{
+            max-width: 100%;
+        }
+
+        select{
+            max-width: 100%;
         }
     </style>
 </head>
@@ -1094,10 +1112,25 @@
                 configOptions.hidden = false;
             }
             // deck is loaded, unlock compute button
-            let computeButton = document.getElementById("color-compute-button");
+            let button = document.getElementById("color-compute-button");
+            button.disabled = false;
+            let error = button.parentElement;
+            error.replaceChildren(button);
+            button = document.getElementById("tap-compute-button");
+            button.disabled = false;
+            error = button.parentElement;
+            error.replaceChildren(button);
+            /*let computeButton = document.getElementById("color-compute-button");
             computeButton.disabled = false;
             computeButton = document.getElementById("tap-compute-button");
             computeButton.disabled = false;
+            let errors = document.getElementsByName("load-first");
+            for(let i = 0; i < errors.length; i++){
+                //errors[i].textContent = errors[i].textContent.replace("Use the Deck Loader to select a deck","");
+                let error = errors[i];
+                let button = paragraph.querySelector("#myChildElement");
+                for(butt)
+            }*/
             console.log('processed');
             let loadResult = document.getElementById("load-result");
             loadResult.innerText = "Deck loaded!";
@@ -1886,6 +1919,7 @@
         }
     </script>
     <div class="analyzer" name="deckEntry">
+        <p class="title">Deck Loader</p>
         <p class="prompt"> Paste your decklist here </p>
         <textarea id="decklist" rows="10" cols="50" placeholder="Paste your exported decklist here (format: '1 sol ring')"></textarea>
         <p class="prompt"> Name of commander(s) </p>
@@ -1914,7 +1948,7 @@
         </div>
     </div>
     <div class="analyzer" name="colorCalc">
-        <p class="title"> Color Analyzer</p>
+        <p class="title">Color Analyzer</p>
         <div id="approx-config" hidden>
             <p>It looks like your deck has 5 colors. This makes the analysis more complicated, so it may take a few seconds. These settings can also save time by using imperfect estimates for the most time-consuming cards:</p>
             <p class="prompt"> Estimate cards with <input type="text" id="approx-colors" value="5" style="width: 30px"> or more colors </p>
@@ -1922,18 +1956,18 @@
             <p class="prompt"> Estimation samples </p>
             <input type="text" id="approx-samples" value="100000">
         </div>
-        <p>
-            <input type="button" id="color-compute-button" value="Compute" onclick="colorTest()">
+        <p class="error-text" name="load-first">
+            <input type="button" id="color-compute-button" value="Compute" onclick="colorTest()"> Use the Deck Loader to select a deck
         </p>    
         <div class="result-box" id="color-analyzer-result-box">
             <p id='color-analyzer-result' class="result-text"></p>
         </div>
     </div>
     <div class="analyzer" name="tapCalc">
-        <p class="title"> Tap Analyzer</p>
+        <p class="title">Tap Analyzer</p>
         <p class="prompt"> Include first <input type="text" id="tap-turns" value="7" style="width: 30px"> turns in calculations</p>
-        <p>
-            <input type="button" id="tap-compute-button" value="Compute" onclick="tapTest()">
+        <p class="error-text" name="load-first">
+            <input type="button" id="tap-compute-button" value="Compute" onclick="tapTest()"> Use the Deck Loader to select a deck
         </p>    
         <div class="result-box" id="tap-analyzer-result-box">
             <p id='tap-analyzer-result' class="result-text"></p>
