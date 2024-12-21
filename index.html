@@ -415,11 +415,11 @@
         }
 
         // Simplify the categories of lands to only be relevant to a given color cost
-        function landFilter(cost){
+        function landFilter(myLandTypes, cost){
             let costCode = processCost(cost);
             let limitedLandTypes = new Array(32).fill(0);
             for(let i = 0; i < 32; i++){
-                limitedLandTypes[i&costCode] += landTypes[i]
+                limitedLandTypes[i&costCode] += myLandTypes[i]
             }
             return limitedLandTypes;
         }
@@ -504,6 +504,35 @@
             roundLands(myLandTypes);
         }
 
+        // given lands with conditions like tainted or verge lands, figure out how likely the condition is to be met with a given number of lands drawn in total
+        function condAdjust(drawn){
+            let myLandTypes = landTypes.slice();
+            let myLandCount = Math.round(sum(myLandTypes));
+            for(let i = 0; i < condLands.length; i++){
+                let matches = typeSearch(condLands[i][2].replaceAll("a ","").replaceAll("an ","").split(" or "));
+                let odds = drawTypeMin(myLandCount - 1, matches, Math.max(0, drawn - 1), 1);
+                console.log("drawn: " + drawn + ", odds: " + odds + ", matches: " + matches);
+                myLandTypes[condLands[i][0]] -= odds;
+                myLandTypes[condLands[i][1]] += odds;
+            }
+            return myLandTypes;
+        }
+
+        // given a list of card types or subtypes, search the decklist to find how many match one or more of those types
+        function typeSearch(typeList){
+            let numFound = 0;
+            for(let i = 0; i < deckList.length; i++){
+                let match = false;
+                for(let j = 0; j < typeList.length && !match; j++){
+                    match = deckList[i].card_type.includes(typeList[j]);
+                }
+                if(match){
+                    numFound += deckList[i].count;
+                }
+            }
+            return numFound;
+        }
+
         // for a given set of color pips in a mana cost, generate a cdf for when a manabase is able to afford those colors
         function pipDist(cost){
             // override empty input fields with default values
@@ -513,20 +542,23 @@
             if(approxSamples == undefined){
                 approxSamples = 100000;
             }
-            // filter and round lands for given color combination
-            let roundedLands = roundLands(landFilter(cost));
-            let roundedLandCount = sum(roundedLands);
 
             let canCast = new Array(13);
             let comboReqs = getComboReqs(cost);
             // run 2 different versions of the analysis program, 1 that estimates for expensive cards, one that does the perfect computation for cheap cards.
             if(numColors(cost) < approxColors){
                 for(let n = 0; n <= 12; n++){
+                    // filter and round lands for given color combination
+                    let roundedLands = roundLands(landFilter(condAdjust(n), cost));
+                    let roundedLandCount = sum(roundedLands);
                     result = rLandTest(cost, roundedLands, n, roundedLandCount, 31, 1, structuredClone(comboReqs));
                     canCast[n] = result;
                 }
             }else{
                 for(let n = 0; n <= 12; n++){
+                    // filter and round lands for given color combination
+                    let roundedLands = roundLands(landFilter(condAdjust(n), cost));
+                    let roundedLandCount = sum(roundedLands);
                     result = landTestUniformSample(cost, roundedLands, n, roundedLandCount, 31, 0, approxSamples, structuredClone(comboReqs));
                     canCast[n] = (result / approxSamples);
                 }
