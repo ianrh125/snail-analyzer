@@ -237,6 +237,8 @@
 
         var tapAnalDict;
 
+        var condLands;
+
         function fact(x){
             let y = x
             while(x>2){
@@ -989,6 +991,8 @@
             let commanderName2 = document.getElementById('commander-name-2').value || "nocard";
             let commander1found = 0;
             let commander2found = 0;
+
+            condLands = [];
             
             // read in cards from decklist
             for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
@@ -1076,7 +1080,7 @@
                         // handle fetches
                         if(card.mana_source.fetch){
                             let addLandTypes = getFetchEquivalent(card.mana_source);
-                            console.log(card.name + ": " + addLandTypes[0] + " " + addLandTypes[1] + " " + addLandTypes[2] + " " + addLandTypes[4] + " " + addLandTypes[8] + " " + addLandTypes[16]);
+                            //console.log(card.name + ": " + addLandTypes[0] + " " + addLandTypes[1] + " " + addLandTypes[2] + " " + addLandTypes[4] + " " + addLandTypes[8] + " " + addLandTypes[16]);
                             console.log(addLandTypes);
                             for(let i = 0; i < 32; i++){
                                 landTypes[i] += addLandTypes[i] * count;
@@ -1095,7 +1099,14 @@
                             //landTypes[0] += count * (1-sourceMult);
                             landCount += count;
                             deckList.push(card);
-                        }    
+                        }
+                        if(card.mana_source.cond){
+                            let index1 = findLandIndex(card.mana_source);
+                            let index2 = findLandIndex(card.mana_source.cond.colors) | index1;
+                            let condition = card.mana_source.cond.cond;
+                            condLands.push([index1, index2, condition]);
+                            console.log([index1, index2, condition]);
+                        } 
                     } else{
                         deckList.push(card);
                     }
