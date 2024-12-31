@@ -1110,6 +1110,7 @@
                     }
                     else if(card.card_type.includes("Land")){
                         // handle fetches
+                        let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
                         if(card.mana_source.fetch){
                             let addLandTypes = getFetchEquivalent(card.mana_source);
                             //console.log(card.name + ": " + addLandTypes[0] + " " + addLandTypes[1] + " " + addLandTypes[2] + " " + addLandTypes[4] + " " + addLandTypes[8] + " " + addLandTypes[16]);
@@ -1123,11 +1124,27 @@
                                 sourceMult = 0.67;
                             }*/
                         }
+                        else if(card.mana_source.choose){
+                            // "choose a color" type mana sources (thriving, CLB gates)
+                            //console.log(name);
+                            let landIndex = findLandIndex(card.mana_source) & deckColors;
+                            let chooseIndex = deckColors & (~landIndex);
+                            let numColors = Math.sign(chooseIndex & 1) + Math.sign(chooseIndex & 2) + Math.sign(chooseIndex & 4) + Math.sign(chooseIndex & 8) + Math.sign(chooseIndex & 16);
+                            landTypes[chooseIndex | landIndex] += 0.5;
+                            //console.log("0.50 " + (chooseIndex | landIndex));
+                            for(let i = 1; i < 32; i *= 2){
+                                if(i & chooseIndex){
+                                    //console.log((1/(2*numColors)).toFixed(2) + " " + (i | landIndex));
+                                    landTypes[i | landIndex] += 1/(2*numColors);
+                                }
+                            }
+                            landCount += count;
+                            deckList.push(card);
+                        }
                         else{
-                            let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
                             let landIndex = findLandIndex(card.mana_source) & deckColors;
                             landTypes[landIndex] += count * sourceMult;
-                            console.log(card.name + ": " + landIndex);
+                            //console.log(card.name + ": " + landIndex);
                             //landTypes[0] += count * (1-sourceMult);
                             landCount += count;
                             deckList.push(card);
@@ -1276,9 +1293,26 @@
                     if(deckList[i].mana_source.fetch){
                         let addLandTypes = getFetchEquivalent(deckList[i].mana_source);
                         for(let i = 0; i < 32; i++){
-                            landTypes[i] += addLandTypes[i] * deckList[i].count;
+                            landTypes[i] += addLandTypes[i] * deckList[i].count * typeMult;
                         }
-                        landCount += deckList[i].count;
+                        landCount += deckList[i].count * typeMult;
+                    }
+                    else if(deckList[i].mana_source.choose){
+                        // "choose a color" type mana sources (thriving, CLB gates)
+                        console.log(deckList[i].name);
+                        let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
+                        landIndex = findLandIndex(deckList[i].mana_source) & deckColors;
+                        let chooseIndex = deckColors & (~landIndex);
+                        let numColors = Math.sign(chooseIndex & 1) + Math.sign(chooseIndex & 2) + Math.sign(chooseIndex & 4) + Math.sign(chooseIndex & 8) + Math.sign(chooseIndex & 16);
+                        landTypes[chooseIndex | landIndex] += 0.5 * typeMult;
+                        console.log((0.5 * typeMult).toFixed(2) + " " + (chooseIndex | landIndex));
+                        for(let i = 1; i < 32; i *= 2){
+                            if(i & chooseIndex){
+                                console.log((1/(2*numColors) * typeMult).toFixed(2) + " " + (i | landIndex));
+                                landTypes[i | landIndex] += 1/(2*numColors) * typeMult;
+                            }
+                        }
+                        landCount += deckList[i].count * typeMult;
                     }
                     else if(landIndex != 0){
                         typeMult *= turnsToCast(deckList[i].colorCost)[x];
