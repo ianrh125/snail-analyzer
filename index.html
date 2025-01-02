@@ -640,6 +640,7 @@
             for(let i = 0; i < 7; i++){
                 mullLands[i] += mullDist[i];
             }
+            console.log(mullLands);
             // only keep after 4
         }
 
@@ -1764,6 +1765,7 @@
                     }
                 }
                 else{
+                    // Missed a land drop, playing lands as they're drawn, fast land drawn after first 3 enters tapped
                     for(let j = 0; j <= turns - 3; j++){
                         let pLand = drawType(89, landCount - i, turns - 3, j);
                         pTapped += pLand * Math.max((i+j-3), 0);
@@ -1784,7 +1786,43 @@
             // Enters untapped if you control 2 or more other lands
             // If it's drawn before turn three (p = 9/n+7), check for the probability that the player will draw enough other lands to play first.
             // If it's drawn on or after turn 3 (p = n-2/n+7), check for the probability that the player has drawn two or more other lands by that point.
-            return 0.5;
+            let t3Dist = landsAtTurn(3);
+            let tapped = 0;
+            for(let i = 0; i < mullLands.length; i++){
+                let pTapped = 0;
+                // 3 or more lands in opening hand: 100% success rate
+                // 2 in opening hand: draw one in first 2 turns and we're good, otherwise enters tapped if in first 2
+                if(i == 2){
+                    for(let j = 0; j <= turns; j++){
+                        let pLand = drawType(92, landCount - i, turns, j);
+                        let pDraw = drawTypeMin(turns, j, 2, 1);
+                        pTapped += pLand * 2 * (1 - pDraw);
+                    }
+                }
+                // 1 in opening hand: draw two in first 2 turns and we're good, otherwise enters tapped if in first 2
+                else if(i == 1){
+                    for(let j = 0; j <= turns; j++){
+                        let pLand = drawType(92, landCount - i, turns, j);
+                        let pDraw = drawTypeMin(turns, j, 2, 2);
+                        pTapped += pLand * Math.min((i+j), 2) * (1 - pDraw);
+                    }
+                }
+                // 0 in opening hand: play lands as we draw them, enters tapped if in first 2
+                else if(i == 0){
+                    for(let j = 0; j <= turns; j++){
+                        let pLand = drawType(92, landCount - i, turns, j);
+                        pTapped += pLand * Math.min((i+j), 2);
+                    }
+                }
+                tapped += pTapped * mullLands[i];
+            }
+
+            let totalLandDist = landsAtTurn(turns);
+            let avgLands = 0;
+            for(let i = 0; i < totalLandDist.length; i++){
+                avgLands += i * totalLandDist[i];
+            }
+            return tapped / avgLands;
         }
 
         function pTapCheck(types, turns){
