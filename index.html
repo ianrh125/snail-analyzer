@@ -648,7 +648,7 @@
             let landDist = new Array(13).fill(0);
             for(let startLands = 0; startLands < 7; startLands++){
                 for(let drawnLands = 0; drawnLands <= turn; drawnLands++){
-                    landDist[Math.min(startLands + drawnLands, 12)] += mullLands[startLands] * drawType(92 - turn, landCount - startLands, turn, drawnLands);
+                    landDist[Math.min(startLands + drawnLands, 12)] += mullLands[startLands] * drawType(92, landCount - startLands, turn, drawnLands);
                 }
             }
             return landDist;
@@ -1752,7 +1752,32 @@
             // Enters untapped if you control 2 or fewer other lands
             // If it's drawn before turn 4 (p = 10/n+7), it's untapped
             // If it's drawn on or after turn 4, (p = n-3/n+7), check for the probability that the player has only drawn 2 or fewer other lands by that point.
-            return 0.5;
+            let t3Dist = landsAtTurn(3);
+            let tapped = 0;
+            for(let i = 0; i < t3Dist.length; i++){
+                let pTapped = 0;
+                if(i >= 3){
+                    // Hit first 3 land drops, fast land drawn after turn 3 enters tapped
+                    for(let j = 0; j <= turns - 3; j++){
+                        let pLand = drawType(89, landCount - i, turns - 3, j);
+                        pTapped += pLand * j;
+                    }
+                }
+                else{
+                    for(let j = 0; j <= turns - 3; j++){
+                        let pLand = drawType(89, landCount - i, turns - 3, j);
+                        pTapped += pLand * Math.max((i+j-3), 0);
+                    }
+                }
+                tapped += pTapped * t3Dist[i];
+            }
+
+            let totalLandDist = landsAtTurn(turns);
+            let avgLands = 0;
+            for(let i = 0; i < totalLandDist.length; i++){
+                avgLands += i * totalLandDist[i];
+            }
+            return tapped / avgLands;
         }
 
         function pTapSlow(turns){
@@ -2010,6 +2035,12 @@
             let tapTotal = 0;
             let untapTotal = 0;
             let landCount = 0;
+            for(let i = 0; i < deckList.length; i++){
+                if(deckList[i].card_type.includes("Land")){
+                    landCount += deckList[i].count;
+                }
+            }
+            calcMullLands();
             let table = document.getElementById("tap-test-table")
             if(table != null){
                 table.remove();
@@ -2022,10 +2053,9 @@
                     let tap = pTap(deckList[i].mana_source, turns);
                     tapTotal += deckList[i].count * tap;
                     untapTotal += deckList[i].count * (1 - tap);
-                    landCount += deckList[i].count;
-                    if(tap > 0 && tap < 1){
+                    //if(tap > 0 && tap < 1){
                         table.appendChild(tableRow([deckList[i].name, (tap * 100).toFixed(1) + "%"], "td"));
-                    }
+                    //}
                 }
             }
             let actualPerformance = findCurveDensity(Math.round(tapTotal), turns);
