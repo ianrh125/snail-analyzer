@@ -238,6 +238,7 @@
         var tapAnalDict;
 
         var condLands;
+        var lastLandTurn;
 
         function fact(x){
             let y = x
@@ -640,7 +641,6 @@
             for(let i = 0; i < 7; i++){
                 mullLands[i] += mullDist[i];
             }
-            console.log(mullLands);
             // only keep after 4
         }
 
@@ -1742,6 +1742,32 @@
             console.log(landTypes);
         }
 
+        function addScaledArr(arr1, arr2, scale){
+            for(let i = 0; i < arr1.length; i++){
+                arr1[i] += arr2[i] * scale;
+            }
+        }
+
+        function lastLand(turns){
+            lastLandTurn = new Array(turns+1).fill(0);
+            for(let i = 1; i < mullLands.length; i++){
+                addScaledArr(lastLandTurn, rLastLand(i, 92, landCount - i, 0, turns), mullLands[i]);
+            }
+
+        }
+
+        function rLastLand(spares, numCards, numLands, turn, max){
+            let out = new Array(max+1).fill(0);
+            if(turn >= max || spares == 0){
+                out[turn] = 1;
+            }
+            else{
+                addScaledArr(out, rLastLand(spares, numCards-1, numLands-1, turn+1, max), numLands/numCards);
+                addScaledArr(out, rLastLand(spares-1, numCards-1, numLands, turn+1, max), (numCards-numLands)/numCards);  
+            }
+            return out;
+        }
+
         // LAND CYCLE FUNCTIONS
         // these all need to be filled in with the calculations necessary for their relevant cycle of lands
         // a few things to keep in mind while working on these:
@@ -1835,6 +1861,11 @@
             // - combine that with the probabilities of one of the accepted land types being among the other lands
             // NOTE: for these lands, the array of accepted types is stored in source.fastInfo
             // most of it includes the exact types that will appear on cards' type lines, but there are a few that just say "legendary creature", and one that just says "legendary green creature"
+            let relevantCards = typeSearch(types);
+            types.push("Land");
+            let landOverlap = typeSearch(types);
+            let relevantLands = 2 * landCount - landOverlap;
+            let relevantNL = landOverlap - relevantCards;
             return 0.5;
         }
 
@@ -2079,6 +2110,7 @@
                 }
             }
             calcMullLands();
+            lastLand(turns);
             let table = document.getElementById("tap-test-table")
             if(table != null){
                 table.remove();
