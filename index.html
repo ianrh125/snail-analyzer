@@ -1895,20 +1895,80 @@
         function pTapTango(turns){
             // Enters untapped if you control 2 or more basic lands
             // like pTapCheck, but you check the probability of 2 basics instead of 1
-            return 0.5;
+            let relevantLands = typeSearch(["Basic"]);
+            let tapped = 0;
+            for(let i = 0; i < lastLandTurn.length; i++){
+                let pTap = 0;
+                for(let j = 0; j <= turns-i; j++){
+                    pTap += (1-drawTypeMin(landCount - 1, relevantLands, i-1, 2)) * (i + j) * drawType(92-i, landCount-i, turns-i, j);
+                }
+                if(i > turns){
+                    pTap += (1-drawTypeMin(landCount - 1, relevantLands, i-1, 2)) * i;
+                }
+                tapped += pTap * lastLandTurn[i];
+            }
+
+            let totalLandDist = landsAtTurn(turns);
+            let avgLands = 0;
+            for(let i = 0; i < totalLandDist.length; i++){
+                avgLands += i * totalLandDist[i];
+            }
+            return tapped / avgLands;
         }
 
         function pTapWilds(types, turns){
             // For the cycle of "3 or more other [basic type]" lands from eldraine
             // Like pTapCheck, but you use the probability of three instead of 1
-            return 0.5;
+            let relevantLands = typeSearch(types);
+            let tapped = 0;
+            for(let i = 0; i < lastLandTurn.length; i++){
+                let pTap = 0;
+                for(let j = 0; j <= turns-i; j++){
+                    pTap += (1-drawTypeMin(landCount - 1, relevantLands, i-1, 3)) * (i + j) * drawType(92-i, landCount-i, turns-i, j);
+                }
+                if(i > turns){
+                    pTap += (1-drawTypeMin(landCount - 1, relevantLands, i-1, 3)) * i;
+                }
+                tapped += pTap * lastLandTurn[i];
+            }
+
+            let totalLandDist = landsAtTurn(turns);
+            let avgLands = 0;
+            for(let i = 0; i < totalLandDist.length; i++){
+                avgLands += i * totalLandDist[i];
+            }
+            return tapped / avgLands;
         }
 
         function pTapReveal(types, turns){
             // For the lands that want you to reveal a card of a certain subtype to enter untapped
             // this would work like pTapCheck, but there's now the possibility of playing the card before you draw the land and then everything's all fucked up
             // good luck lmao
-            return 0.5;
+            let relevantCards = typeSearch(types);
+            let typesPlusLand = types.slice();
+            typesPlusLand.push("Land");
+            let landOverlap = typeSearch(typesPlusLand);
+            let relevantNL = landOverlap - landCount;
+            let relevantLands = relevantCards - relevantNL;
+            let tapped = 0;
+            for(let i = 0; i < lastLandTurn.length; i++){
+                let pTap = 0;
+                pTap += (1-drawTypeMin(landCount - 1, relevantLands, i-1, 1)) * i;
+                for(let j = 0; j <= turns-i; j++){
+                    pTap += j * drawType(92-i, landCount-i, turns-i, j);
+                }
+                /*if(i > turns){
+                    pTap += (1-drawTypeMin(landCount - 1, relevantLands, i-1, 1)) * i;
+                }*/
+                tapped += pTap * lastLandTurn[i];
+            }
+
+            let totalLandDist = landsAtTurn(turns);
+            let avgLands = 0;
+            for(let i = 0; i < totalLandDist.length; i++){
+                avgLands += i * totalLandDist[i];
+            }
+            return tapped / avgLands;
         }
 
         function pTap(source, turns){
