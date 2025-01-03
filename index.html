@@ -1749,17 +1749,22 @@
         }
 
         function lastLand(turns){
-            lastLandTurn = new Array(turns+1).fill(0);
+            lastLandTurn = new Array(turns+8).fill(0);
             for(let i = 1; i < mullLands.length; i++){
                 addScaledArr(lastLandTurn, rLastLand(i, 92, landCount - i, 0, turns), mullLands[i]);
             }
+            console.log(lastLandTurn);
+            console.log(sum(lastLandTurn));
 
         }
 
         function rLastLand(spares, numCards, numLands, turn, max){
-            let out = new Array(max+1).fill(0);
-            if(turn >= max || spares == 0){
+            let out = new Array(max+8).fill(0);
+            if(spares == 0){
                 out[turn] = 1;
+            }
+            else if(turn >= max){
+                out[turn + spares] = 1;
             }
             else{
                 addScaledArr(out, rLastLand(spares, numCards-1, numLands-1, turn+1, max), numLands/numCards);
@@ -1862,11 +1867,29 @@
             // NOTE: for these lands, the array of accepted types is stored in source.fastInfo
             // most of it includes the exact types that will appear on cards' type lines, but there are a few that just say "legendary creature", and one that just says "legendary green creature"
             let relevantCards = typeSearch(types);
-            types.push("Land");
-            let landOverlap = typeSearch(types);
-            let relevantLands = 2 * landCount - landOverlap;
-            let relevantNL = landOverlap - relevantCards;
-            return 0.5;
+            let typesPlusLand = types.slice();
+            typesPlusLand.push("Land");
+            let landOverlap = typeSearch(typesPlusLand);
+            let relevantNL = landOverlap - landCount;
+            let relevantLands = relevantCards - relevantNL;
+            let tapped = 0;
+            for(let i = 0; i < lastLandTurn.length; i++){
+                let pTap = 0;
+                for(let j = 0; j <= turns-i; j++){
+                    pTap += (1-drawTypeMin(landCount - 1, relevantLands, i-1, 1)) * (i + j) * drawType(92-i, landCount-i, turns-i, j);
+                }
+                if(i > turns){
+                    pTap += (1-drawTypeMin(landCount - 1, relevantLands, i-1, 1)) * i;
+                }
+                tapped += pTap * lastLandTurn[i];
+            }
+
+            let totalLandDist = landsAtTurn(turns);
+            let avgLands = 0;
+            for(let i = 0; i < totalLandDist.length; i++){
+                avgLands += i * totalLandDist[i];
+            }
+            return tapped / avgLands;
         }
 
         function pTapTango(turns){
