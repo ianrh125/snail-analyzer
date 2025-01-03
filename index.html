@@ -208,6 +208,7 @@
         var landCount;
         var iterations;
         var decklist;
+        var loadCount = 0;
 
         var manaDict;
         var oneDropDict;
@@ -1117,7 +1118,7 @@
                         if(card.mana_source.fetch){
                             let addLandTypes = getFetchEquivalent(card.mana_source);
                             //console.log(card.name + ": " + addLandTypes[0] + " " + addLandTypes[1] + " " + addLandTypes[2] + " " + addLandTypes[4] + " " + addLandTypes[8] + " " + addLandTypes[16]);
-                            console.log(addLandTypes);
+                            //console.log(addLandTypes);
                             for(let i = 0; i < 32; i++){
                                 landTypes[i] += addLandTypes[i] * count;
                             }
@@ -1207,7 +1208,13 @@
             }*/
             console.log('processed');
             let loadResult = document.getElementById("load-result");
-            loadResult.innerText = "Deck loaded!";
+            if(loadCount == 0){
+                loadResult.innerText = "Deck loaded!";
+            }
+            else{
+                loadResult.innerText = "Deck loaded! (" + loadCount + ")";
+            }
+            loadCount++;
         }
 
         // on startup, disable the compute button until the user loads their deck
