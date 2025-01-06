@@ -513,7 +513,6 @@
             for(let i = 0; i < condLands.length; i++){
                 let matches = typeSearch(condLands[i][2].replaceAll("a ","").replaceAll("an ","").split(" or "));
                 let odds = drawTypeMin(myLandCount - 1, matches, Math.max(0, drawn - 1), 1);
-                console.log("drawn: " + drawn + ", odds: " + odds + ", matches: " + matches);
                 myLandTypes[condLands[i][0]] -= odds;
                 myLandTypes[condLands[i][1]] += odds;
             }
@@ -1047,13 +1046,15 @@
                 name = name.substring(cut+1);
                 let card = testDict[name];
 
-                white += card.mana_cost.split("{W}").length - 1;
-                blue += card.mana_cost.split("{U}").length - 1;
-                black += card.mana_cost.split("{B}").length - 1;
-                red += card.mana_cost.split("{R}").length - 1;
-                green += card.mana_cost.split("{G}").length - 1;
+                if(card.mana_cost){
+                    white += card.mana_cost.split("{W}").length - 1;
+                    blue += card.mana_cost.split("{U}").length - 1;
+                    black += card.mana_cost.split("{B}").length - 1;
+                    red += card.mana_cost.split("{R}").length - 1;
+                    green += card.mana_cost.split("{G}").length - 1;
+                }
 
-                if(card.card_type.includes("Land")){                
+                if(card.card_type && card.card_type.includes("Land")){                
                     let landIndex = findLandIndex(card.mana_source);
                     //landTypes[0] += count * (1-sourceMult);
                     if(card.card_type.includes("Plains")){
@@ -1454,7 +1455,6 @@
             if(commander1){
                 let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
                 let turnCastDist = turnsToCast(commander1.colorCost);
-                console.log(landsToCast(commander1.colorCost));
                 let cmc = Math.min(commander1.colorCost.t, 12);
                 let onCurveRate = turnCastDist[cmc];
                 let avgDelay = mean(turnCastDist) - commander1.colorCost.t;
