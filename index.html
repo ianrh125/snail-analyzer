@@ -2302,44 +2302,4 @@
             <p id='tap-analyzer-result' class="result-text"></p>
         </div>
     </div>
-    <!-- These info boxes can probably just be on the website itself. This is an embed after all
-    <div style="float:left">
-        <div class = "info-box" name="info">
-            <p class="title"> How to Use</p>
-            <ol type="1">
-                <li>Paste your decklist into the entry box in the format [1 cardname]. You can get this using the "export to Arena" option on most deckbuilders and removing any extra lines that aren't in this format</li>
-                <li>Click "Load" to retrieve the cards in your deck from our database</li>
-                <li>Click "Compute" to analyze your deck</li>
-            </ol>
-            <p>This analyzer is built to test how well your deck's manabase can support its spells, and identify where it needs improvement. It does so by calculating 2 metrics:</p>
-            <ol type="1">
-                <li>Cast rate: For a spell with a mana value of X, what is the probability that you will have the mana available to cast it on turn X?</li>
-                <li>Average Delay: On average, how many turns do you have to wait past turn X to be able to cast a spell? (this includes cases where it can be cast immediately)</li>
-            </ol>
-            <p>These two tend to be fairly closely related, with every 1% drop in cast rate leading to a roughly 0.03 turn increase in cast delay. However, cast delay can account for colors that have fewer sources in your deck and take longer to topdeck</p>
-            <p>In general, a 90% cast rate or 0.3 average delay indicates that your deck has strong support from its manabase, while an 80% cast rate or 0.6 average delay is in need of improvement</p>
-            <p>This analyzer recommends improvements by calculating these values for multiple variations on your manabase: one with an extra wastes, and one for each basic land type with an extra copy of that land</p>
-            <p>The "+1 Wastes" variation is a good metric for how well your deck can support the mana values of your cards. If it's coming back with more than +1% cast rate and -0.03 average delay, your deck probably needs more lands in general</p>
-            <p>The "+1 Basic" variations act as metric for how well your deck can support the color requirements of your cards. If the "+1 Plains" variation is only slightly better than the "+1 Wastes" variation, then your deck has the support for white it needs. But if it is a much larger imrpvement than "+1 Wastes", then your deck might need more white sources in general</p>
-        </div>
-        <div class = "warning-box" name="warning">
-            <p class="angry-title"> Warning: This is an incomplete prototype</p>
-            <p>While the basic functionality is in place, this tool does not have the capacity to accurately evaluate every type and source of mana present in Magic: the Gathering. 
-                Here are some features that the current iteration does not know how to handle:</p>
-            <ul>
-                <li>Split Pips</li>
-                <li>Colorless Mana</li>
-                <li>Snow Mana</li>
-                <li>Fetchable Duals/Triomes</li>
-                <li>Using draw/scry/surveil to get more lands</li>
-                <li>MDFC's (basic functionality is in place, but nuance is missing)</li>
-                <li>Fetching in forms other than "Search your library for ___"</li>
-                <li>Playing spells early due to ramp (any ramp is treated like extra lands)</li>
-                <li>Ramp spells that can gain multiple sources (i.e. Cultivate)</li>
-                <li>Choosing a ramp piece as a commander (i.e. <a href="https://www.youtube.com/watch?v=ceILMLrNCGw">Snail's Radha Deck</a>)</li>
-                <li>Cards with very high mana value (10 is the absolute maximum, but 8 and above might get some strange results)</li>
-            </ul>
-            <p style="margin-bottom: 0px">In general, this analyzer is built to evaluate a traditional curve out (turn 1: 1-drop, turn 2: 2-drop, etc), and the less your deck's rollout looks like this, the less applicable this analysis will be</p>
-        </div>
-    </div> -->
 </body>
