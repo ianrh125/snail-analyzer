@@ -198,6 +198,31 @@
         select{
             max-width: 100%;
         }
+        input[type=button]{
+            background-color:#77ee77;
+            border-radius: 15px;
+            border: 1px solid #383;
+            cursor: pointer;
+            padding: 5px 15px;
+            font-size: 15px;
+            font-weight: bold;
+            box-shadow: 0 3px #383;
+            transition: 0.3s ease-out;
+        }
+        input[type=button]:hover{
+            background-color:#3e3;
+        }
+        input[type=button]:active{
+            background-color:#5c5;
+            box-shadow: 0 1px #383;
+            transform: translateY(2px);
+            transition: 0.07s ease-out;
+        }
+        input[type=button]:disabled{
+            background-color:#bdb;
+            box-shadow: 0 1px #9b9;
+            transform: translateY(2px);
+        }
     </style>
 </head>
 <body onload="disableButton()">
@@ -2344,9 +2369,9 @@
             console.log(oneLessTapPerformance);
             let allUntappedPerformance = findCurveDensity(0, turns);
             console.log(allUntappedPerformance);
-            result.innerText = "Your lands enter tapped " + (tapTotal * 100 / landCount).toFixed(1) + 
-                "% of the time\nThis makes your curve-outs " + ((1 - (actualPerformance / allUntappedPerformance)) * 100).toFixed(1) + 
-                "% less effective\nThis would be a " + ((1 - (oneLessTapPerformance / allUntappedPerformance)) * 100).toFixed(1) + "% reduction if you replaced a tap land with an untapped land";
+            result.innerHTML = "Your lands enter tapped <strong>" + (tapTotal * 100 / landCount).toFixed(1) + 
+                "%</strong> of the time <br>This makes your curve-outs <strong>" + ((1 - (actualPerformance / allUntappedPerformance)) * 100).toFixed(1) + 
+                "%</strong> less effective <br>This would be a <strong>" + ((1 - (oneLessTapPerformance / allUntappedPerformance)) * 100).toFixed(1) + "%</strong> reduction if you replaced a tap land with an untapped land";
             document.getElementById("tap-analyzer-result-box").appendChild(table);
         }
     </script>
@@ -2357,7 +2382,7 @@
         <p class="prompt"> Name of commander(s) </p>
         <p><input type="text" id="commander-name-1" placeholder="Commander">
         <input type="text" id="commander-name-2" placeholder="Partner/Companion"></p>
-        <label for="commander">How important is your commander to your deck?</label>
+        <label for="commander" class="prompt">How important is your commander to your deck?</label>
         <select name="commander" id="cmdr1-weight">
             <option value="10">Just another card</option>
             <option value="20">A nice bonus for a deck that is still functional without it</option>
@@ -2365,7 +2390,7 @@
             <option value="50">A critical piece of a deck that would fall flat without it</option>
         </select>
         <br><br>
-        <label for="partner">How important is your partner/companion to your deck?</label>
+        <label for="partner" class="prompt">How important is your partner/companion to your deck?</label>
         <select name="partner" id="cmdr2-weight">
             <option value="10">Just another card</option>
             <option value="20">A nice bonus for a deck that is still functional without it</option>
