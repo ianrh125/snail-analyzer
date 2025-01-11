@@ -1139,12 +1139,12 @@
                     card.count = count;
 
                     // categorizing lands and incrementing category totals
-                    if(card.name.includes(commanderName1)){
+                    if(card.name.toLowerCase().includes(commanderName1.toLowerCase())){
                         commander1 = card;
                         console.log("commander 1: " + card.name);
                         commander1found += 1;
                     }
-                    else if(card.name.includes(commanderName2)){
+                    else if(card.name.toLowerCase().includes(commanderName2.toLowerCase())){
                         commander2 = card;
                         console.log("commander 2: " + card.name);
                         commander2found += 1;
@@ -1737,8 +1737,10 @@
                 addError("color-analyzer-result-box", "Error: Land impact analysis cancelled, predicted runtime too high");
                 return;
             }
+
             landCount = landCountBackup;
             landTypes = landTypesBackup;
+
             // calculate for +1 wastes variant
             table.appendChild(testVariant("+1 Wastes", createDiff([[0, 1]]), baseRate, baseDelay));
             // calculate for variants with all the colors present in the deck
@@ -1855,6 +1857,9 @@
         }
 
         function pTapSlow(turns){
+            if(turns < 3){
+                return 1;
+            }
             // Enters untapped if you control 2 or more other lands
             // If it's drawn before turn three (p = 9/n+7), check for the probability that the player will draw enough other lands to play first.
             // If it's drawn on or after turn 3 (p = n-2/n+7), check for the probability that the player has drawn two or more other lands by that point.
@@ -1898,6 +1903,9 @@
         }
 
         function pTapCheck(types, turns){
+            if(turns < 2){
+                return 1;
+            }
             // Enters untapped if you control a card of one of a list of specified types.
             // For this category of check lands, I think it would make sense to model it with the probability that the player draws a card of the accepted types before they have no other lands left
             // The required process will likely look something like this:
@@ -1942,6 +1950,9 @@
         }
 
         function pTapTango(turns){
+            if(turns < 3){
+                return 1;
+            }
             // Enters untapped if you control 2 or more basic lands
             // like pTapCheck, but you check the probability of 2 basics instead of 1
             let relevantLands = typeSearch(["Basic"]);
@@ -1963,6 +1974,9 @@
         }
 
         function pTapWilds(types, turns){
+            if(turns < 3){
+                return 1;
+            }
             // For the cycle of "3 or more other [basic type]" lands from eldraine
             // Like pTapCheck, but you use the probability of three instead of 1
             let relevantLands = typeSearch(types);
@@ -2367,6 +2381,11 @@
             console.log(oneLessTapPerformance);
             let allUntappedPerformance = findCurveDensity(0, turns);
             console.log(allUntappedPerformance);
+            if(allUntappedPerformance == 0){
+                actualPerformance = 1;
+                oneLessTapPerformance = 1;
+                allUntappedPerformance = 1;
+            }
             result.innerHTML = "Your lands enter tapped <strong>" + (tapTotal * 100 / landCount).toFixed(1) + 
                 "%</strong> of the time <br>This makes your curve-outs <strong>" + ((1 - (actualPerformance / allUntappedPerformance)) * 100).toFixed(1) + 
                 "%</strong> less effective <br>This would be a <strong>" + ((1 - (oneLessTapPerformance / allUntappedPerformance)) * 100).toFixed(1) + "%</strong> reduction if you replaced a tap land with an untapped land";
