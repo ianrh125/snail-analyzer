@@ -1737,10 +1737,8 @@
                 addError("color-analyzer-result-box", "Error: Land impact analysis cancelled, predicted runtime too high");
                 return;
             }
-
             landCount = landCountBackup;
             landTypes = landTypesBackup;
-
             // calculate for +1 wastes variant
             table.appendChild(testVariant("+1 Wastes", createDiff([[0, 1]]), baseRate, baseDelay));
             // calculate for variants with all the colors present in the deck
