@@ -264,6 +264,7 @@
         var tapAnalDict;
 
         var condLands;
+        var condNames;
         var lastLandTurn;
 
         function fact(x){
@@ -1064,6 +1065,7 @@
             let commander2found = 0;
 
             condLands = [];
+            condNames = [];
             
             // read in cards from decklist
             for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
@@ -1195,6 +1197,7 @@
                             let index2 = findLandIndex(card.mana_source.cond.colors) | index1;
                             let condition = card.mana_source.cond.cond;
                             condLands.push([index1, index2, condition]);
+                            condNames.push(name);
                             console.log([index1, index2, condition]);
                         } 
                     } else{
@@ -1775,9 +1778,53 @@
                 cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(testDict[allCards[i][0]].mana_cost), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td"));
             }
 
-            //document.getElementById("color-analyzer-result-box").appendChild(cardTable);
-
-            createTableTab("color-test", "color-analyzer-result-box", ["Overall Performance", "Individual Cards"], [table, cardTable]);
+            // create table for tainted and verge lands if needed
+            landCount = landCountBackup;
+            if(condLands.length > 0){
+                // create html elements
+                let condTable = document.getElementById("color-cond-table");
+                if(condTable != null){
+                    condTable.remove();
+                }
+                condTable = document.createElement("table");
+                cardTable.id = "color-cond-table"
+                // shorten names, remove multiples of tainted lands
+                let newCondNames = [];
+                let newCondList = [];
+                for(let i = 0; i < condLands.length; i++){
+                    if(!newCondNames.includes(condNames[i].split(" ")[0])){
+                        newCondNames.push(condNames[i].split(" ")[0]);
+                        newCondList.push(condLands[i][2]);
+                    }
+                }
+                condTable.appendChild(tableRow(["Turn"].concat(newCondNames), "th"));
+                // process for each turn and each land
+                for(let turn = 2; turn < 8; turn++){
+                    let myLandCount = landCount;
+                    let row = ["Turn " + turn];
+                    let landsDrawn = landsAtTurn(turn);
+                    for(let land = 0; land < newCondList.length; land++){
+                        let matches = typeSearch(newCondList[land].replaceAll("a ","").replaceAll("an ","").split(" or "));
+                        
+                        let avgLands = 0;
+                        for(let i = 0; i < landsDrawn.length; i++){
+                            avgLands += i * landsDrawn[i];
+                        }
+                        let odds = 0;
+                        // go through the distribution of lands drawn, for each number calculate drawing the relevant lands in those lands
+                        //start counting at 2 since 1-landers will fail by default
+                        for(let i = 2; i < landsDrawn.length; i++){
+                            odds += drawTypeMin(myLandCount - 1, matches, Math.max(0, i - 1), 1) * landsDrawn[i] * i / avgLands;
+                        }
+                        row.push((odds * 100).toFixed(1) + "%");
+                    }
+                    condTable.appendChild(tableRow(row, "td"));
+                }
+                createTableTab("color-test", "color-analyzer-result-box", ["Overall Performance", "Individual Cards", "Conditional Lands"], [table, cardTable, condTable]);
+            }
+            else{
+                createTableTab("color-test", "color-analyzer-result-box", ["Overall Performance", "Individual Cards"], [table, cardTable]);
+            }
 
             endTime = Date.now();
             console.log(`Execution time: ${endTime - startTime} ms`);
