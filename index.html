@@ -1343,7 +1343,7 @@
                     if(deckList[i].mana_source.fetch){
                         let addLandTypes = getFetchEquivalent(deckList[i].mana_source);
                         for(let j = 0; j < 32; j++){
-                            landTypes[j] += addLandTypes[j] * deckList[j].count * typeMult;
+                            landTypes[j] += addLandTypes[j] * deckList[i].count * typeMult;
                         }
                         landCount += deckList[i].count * typeMult;
                     }
