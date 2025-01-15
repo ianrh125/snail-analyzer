@@ -1342,8 +1342,8 @@
                     }
                     if(deckList[i].mana_source.fetch){
                         let addLandTypes = getFetchEquivalent(deckList[i].mana_source);
-                        for(let i = 0; i < 32; i++){
-                            landTypes[i] += addLandTypes[i] * deckList[i].count * typeMult;
+                        for(let j = 0; j < 32; j++){
+                            landTypes[j] += addLandTypes[j] * deckList[j].count * typeMult;
                         }
                         landCount += deckList[i].count * typeMult;
                     }
@@ -1356,10 +1356,10 @@
                         let numColors = Math.sign(chooseIndex & 1) + Math.sign(chooseIndex & 2) + Math.sign(chooseIndex & 4) + Math.sign(chooseIndex & 8) + Math.sign(chooseIndex & 16);
                         landTypes[chooseIndex | landIndex] += 0.5 * typeMult;
                         console.log((0.5 * typeMult).toFixed(2) + " " + (chooseIndex | landIndex));
-                        for(let i = 1; i < 32; i *= 2){
-                            if(i & chooseIndex){
-                                console.log((1/(2*numColors) * typeMult).toFixed(2) + " " + (i | landIndex));
-                                landTypes[i | landIndex] += 1/(2*numColors) * typeMult;
+                        for(let j = 1; j < 32; j *= 2){
+                            if(j & chooseIndex){
+                                console.log((1/(2*numColors) * typeMult).toFixed(2) + " " + (j | landIndex));
+                                landTypes[j | landIndex] += 1/(2*numColors) * typeMult;
                             }
                         }
                         landCount += deckList[i].count * typeMult;
@@ -2441,7 +2441,7 @@
     </script>
     <div class="analyzer" name="deckEntry">
         <p class="title">Deck Loader</p>
-        <p class="prompt"> Paste your decklist here </p>
+        <p class="prompt"> Paste your decklist here (including your commander)</p>
         <textarea id="decklist" rows="10" cols="50" placeholder="Paste your exported decklist here (format: '1 sol ring')"></textarea>
         <p class="prompt"> Name of commander(s) </p>
         <p><input type="text" id="commander-name-1" placeholder="Commander">
