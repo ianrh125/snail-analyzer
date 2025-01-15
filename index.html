@@ -1023,7 +1023,7 @@
                 }
                 let first = splitL[i].charAt(0);
                 if(first >= '1' && first <= '9'){
-                    strippedL = strippedL + splitL[i] + "\n";
+                    strippedL = strippedL + splitL[i] + "NEXT_CARD";
                 }
             }
             if(strippedL != lastDecklist){
@@ -1034,7 +1034,7 @@
             }
             lastDecklist = strippedL;
 
-            cardList = strippedL.split('\n');
+            cardList = strippedL.split('NEXT_CARD');
             deckList = [];
             white = 0;
             blue = 0;
