@@ -224,8 +224,7 @@
             transform: translateY(2px);
         }
         .commander-name{
-            max-width: 32%;
-            padding: 0px;
+            margin: 1px;
         }
         .commander-name:placeholder-shown + .commander-weight{
             display:none;
@@ -2518,7 +2517,7 @@
     <div class="analyzer" name="deckEntry">
         <p class="title">Deck Loader</p>
         <p class="prompt"> Paste your decklist here (including your commander)</p>
-        <textarea id="decklist" rows="10" cols="50" placeholder="Paste your exported decklist here (format: '1 sol ring')"></textarea>
+        <textarea id="decklist" rows="10" cols="50" placeholder="Paste your exported decklist here (format: '1 sol ring' or similar)"></textarea>
         <p class="prompt"> Name of commander(s) </p>
         <input type="text" class="commander-name" id="commander-name-1" placeholder="Commander">
         <div class="commander-weight hidden">
@@ -2530,8 +2529,9 @@
                 <option value="30">A major boost for a deck that would struggle without it</option>
                 <option value="50">A critical piece of a deck that would fall flat without it</option>
             </select>
-            <br><br>
+            <br>
         </div>
+        <br>
         <input type="text" class="commander-name" id="commander-name-2" placeholder="Partner">
         <div class="commander-weight hidden">
             <br>
@@ -2542,8 +2542,9 @@
                 <option value="30">A major boost for a deck that would struggle without it</option>
                 <option value="50">A critical piece of a deck that would fall flat without it</option>
             </select>
-            <br><br>
+            <br>
         </div>
+        <br>
         <input type="text" class="commander-name" id="commander-name-3" placeholder="Companion">
         <div class="commander-weight hidden">
             <br>
@@ -2554,7 +2555,7 @@
                 <option value="30">A major boost for a deck that would struggle without it</option>
                 <option value="50">A critical piece of a deck that would fall flat without it</option>
             </select>
-            <br><br>
+            <br>
         </div>
         <p>
             <input type="button" value="Load" onclick="loadDict()">
