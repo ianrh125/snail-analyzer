@@ -1014,7 +1014,7 @@
             clearError("load-result-box");
 
             L = document.getElementById('decklist').value;
-            let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "").replaceAll(/#.*\n/g, "\n");
+            let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "").replaceAll(/#.*\n/g, "\n").replaceAll("+", "PLUS");
             let splitL = sanitizedL.split("\n");
             let strippedL = "";
             for(let i = 0; i < splitL.length; i++){
@@ -1081,7 +1081,7 @@
                     cut++;
                 }
                 let count = parseInt(name.substring(0,cut));
-                name = name.substring(cut+1);
+                name = name.substring(cut+1).replaceAll("PLUS", "+");
                 let card = testDict[name];
 
                 if(card.mana_cost){
@@ -1120,7 +1120,7 @@
                     cut++;
                 }
                 let count = parseInt(name.substring(0,cut));
-                name = name.substring(cut+1);
+                name = name.substring(cut+1).replaceAll("PLUS", "+");
                 let card = testDict[name];
                 // Handle exceptions
                 if(card == "NOT FOUND"){
