@@ -1986,9 +1986,6 @@
                 createTableTab("color-test", "color-analyzer-result-box", ["Overall Performance", "Individual Cards"], [table, cardTable]);
             }
 
-            let ignoreList = document.getElementById("ignore-list");
-            ignoreList.hidden = false;
-
             endTime = Date.now();
             console.log(`Execution time: ${endTime - startTime} ms`);
 
@@ -2604,6 +2601,11 @@
                 "%</strong> less effective <br>This would be a <strong>" + ((1 - (oneLessTapPerformance / allUntappedPerformance)) * 100).toFixed(1) + "%</strong> reduction if you replaced a tap land with an untapped land";
             document.getElementById("tap-analyzer-result-box").appendChild(table);
         }
+
+        function toggleIgnore(){
+            let ignoreList = document.getElementById("ignore-list");
+            ignoreList.hidden = !ignoreList.hidden;
+        }
     </script>
     <div class="analyzer" name="deckEntry">
         <p class="title">Deck Loader</p>
@@ -2671,6 +2673,8 @@
         <div class="result-box" id="color-analyzer-result-box">
             <p id='color-analyzer-result' class="result-text"></p>
         </div>
+        <br>
+        <button onclick="toggleIgnore()">Ignore or Discount cards</button>
         <div id="ignore-list" hidden>
             <p class="prompt">List any cards you want to ignore or discount</p>
             <textarea id="ignore" rows="5" cols="50"></textarea>
