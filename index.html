@@ -278,6 +278,20 @@
         var condNames;
         var lastLandTurn;
 
+        var ignoreCards;
+        const commonDiscounts = {
+            "Blasphemous Act": 5,
+            "The Great Henge": 4,
+            "Treasure Cruise": 4,
+            "Ghalta, Primal Hunger": 6,
+            "Dig Through Time": 4,
+            "City On Fire": 2,
+            "Hour of Reckoning": 3,
+            "Vanquish the Horde": 4,
+            "Thoughtcast": 2,
+            "Thought Monitor": 3
+        }
+
         function fact(x){
             let y = x
             while(x>2){
@@ -852,22 +866,22 @@
         }
 
         // using the stored pipdist dictionaries, get the distribution of how many lands are required to cast a spell
-        function landsToCast(cost){
+        function landsToCast(cost, discount){
             let pipReqs = [];
-            if(cost.t == 1){
+            if(cost.t - discount == 1){
                 pipReqs = oneDropDict.get(pipsToNum(cost)).slice();
             }
-            else if(cost.t == 2){
+            else if(cost.t - discount == 2){
                 pipReqs = twoDropDict.get(pipsToNum(cost)).slice();
             }
-            else if(cost.t == 3){
+            else if(cost.t - discount == 3){
                 pipReqs = threeDropDict.get(pipsToNum(cost)).slice();
             }
             else{
                 let numfromPips = pipsToNum(cost)
                 pipReqs = manaDict.get(numfromPips).slice();
             }
-            for(let i = 0; i < cost.t; i++){
+            for(let i = 0; i < cost.t - discount; i++){
                 pipReqs[i] = 0;
             }
             return pipReqs;
@@ -895,16 +909,16 @@
         }
 
         // using the distributions of how many lands are required to cast a given spell and how many are available at a given turn, find the pdf on casting a spell on turns 1-12
-        function turnsToCast(cost){
-            let landReqs = landsToCast(cost);
+        function turnsToCast(cost, discount){
+            let landReqs = landsToCast(cost, discount);
             let canCast = new Array(16);
-            for(let i = 0; i < cost.t; i++){
+            for(let i = 0; i < cost.t - discount; i++){
                 canCast[i] = 0;
             }
-            for(let i = cost.t; i <= 15; i++){
+            for(let i = cost.t - discount; i <= 15; i++){
                 pCast = 0;
                 let landDist = landsAtTurn(i);
-                for(let lands = cost.t; lands <= 12; lands++){
+                for(let lands = cost.t - discount; lands <= 12; lands++){
                     //pCast += landReqs[lands] * drawType(99, landCount, i + 7, lands);
                     pCast += landReqs[lands] * landDist[lands];
                     //pCast += drawType(99, landCount, i + 7, lands);
@@ -1023,6 +1037,8 @@
             
             //remove previous error messages
             clearError("load-result-box");
+            let ignoreList = document.getElementById("ignore");
+            ignoreList.value = "";
 
             L = document.getElementById('decklist').value;
             let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "").replaceAll(/#.*\n/g, "\n").replaceAll("+", "PLUS");
@@ -1153,6 +1169,17 @@
                     card.colorCost = colorCost;
                     let sourceMult = 1;
                     card.count = count;
+                    if(commonDiscounts[name]){
+                        card.discount = commonDiscounts[name];
+                        if(ignoreList.value){
+                            ignoreList.value += "\n";
+                        }
+                        ignoreList.value += card.discount + " " + name;
+                    }
+                    else{
+                        card.discount = 0;
+                    }
+                    card.ignore = false;
 
                     // categorizing lands and incrementing category totals
                     if(card.name.toLowerCase().includes(commanderName1.toLowerCase())){
@@ -1330,7 +1357,7 @@
         function xDropDict(x){
             let dict = new Map();
             for(let i = 0; i < deckList.length; i++){
-                if(deckList[i].colorCost.t == x){
+                if(deckList[i].colorCost.t - deckList[i].discount == x){
                     let pips = colorReqs(deckList[i].colorCost);
                     let pipCode = pipsToNum(pips);
                     if(!dict.has(pipCode)){
@@ -1356,7 +1383,7 @@
 
         function scanForSources(x){
             for(let i = 0; i < deckList.length; i++){
-                if(deckList[i].colorCost.t == x){
+                if(deckList[i].colorCost.t - deckList[i].discount == x){
                     let landIndex = findLandIndex(deckList[i].mana_source);
                     let typeMult = 1;
                     if(deckList[i].card_type.includes("Artifact")){
@@ -1390,7 +1417,7 @@
                         landCount += deckList[i].count * typeMult;
                     }
                     else if(landIndex != 0 || deckList[i].mana_source.amt > 0){
-                        typeMult *= turnsToCast(deckList[i].colorCost)[x];
+                        typeMult *= turnsToCast(deckList[i].colorCost, deckList[i].discount)[x];
                         landTypes[landIndex] += deckList[i].count * typeMult;
                         landCount += deckList[i].count * typeMult;
                         //console.log("SOURCE: " + cardList[i]);
@@ -1410,6 +1437,21 @@
                     }
                 }
             }
+        }
+
+        function factorDiscount(colorCost, discount){
+            let pips = colorCost.substring(1, colorCost.length-1).split("}{");
+            let costOut = "";
+            for(let i = 0; i < pips.length; i++){
+                let num = parseInt(pips[i]);
+                if(isNaN(num)){
+                    costOut += "{" + pips[i] + "}";
+                }
+                else{
+                    costOut += "{" + (num - discount) + "}";
+                }
+            }
+            return costOut;
         }
         // batching all those little functions up into one big "run the analysis" function
         function deepAnal(individualResults){
@@ -1464,17 +1506,17 @@
             if(commander1){
                 let pips = colorReqs(commander1.colorCost);
                 let pipCode = pipsToNum(pips);
-                if(commander1.colorCost.t == 1 && !oneDropDict.has(pipCode)){
+                if(commander1.colorCost.t - commander1.discount == 1 && !oneDropDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     oneDropDict.set(pipCode, castDistro.slice());
                 }
-                else if(commander1.colorCost.t == 2 && !twoDropDict.has(pipCode)){
+                else if(commander1.colorCost.t - commander1.discount == 2 && !twoDropDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     twoDropDict.set(pipCode, castDistro.slice());
                 }
-                else if(commander1.colorCost.t == 3 && !threeDropDict.has(pipCode)){
+                else if(commander1.colorCost.t - commander1.discount == 3 && !threeDropDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     threeDropDict.set(pipCode, castDistro.slice());
@@ -1488,17 +1530,17 @@
             if(commander2){
                 let pips = colorReqs(commander2.colorCost);
                 let pipCode = pipsToNum(pips);
-                if(commander2.colorCost.t == 1 && !oneDropDict.has(pipCode)){
+                if(commander2.colorCost.t - commander2.discount == 1 && !oneDropDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     oneDropDict.set(pipCode, castDistro.slice());
                 }
-                else if(commander2.colorCost.t == 2 && !twoDropDict.has(pipCode)){
+                else if(commander2.colorCost.t - commander2.discount == 2 && !twoDropDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     twoDropDict.set(pipCode, castDistro.slice());
                 }
-                else if(commander2.colorCost.t == 3 && !threeDropDict.has(pipCode)){
+                else if(commander2.colorCost.t - commander2.discount == 3 && !threeDropDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     threeDropDict.set(pipCode, castDistro.slice());
@@ -1513,17 +1555,17 @@
             if(commander3){
                 let pips = colorReqs(commander3.colorCost);
                 let pipCode = pipsToNum(pips);
-                if(commander3.colorCost.t == 1 && !oneDropDict.has(pipCode)){
+                if(commander3.colorCost.t - commander3.discount == 1 && !oneDropDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     oneDropDict.set(pipCode, castDistro.slice());
                 }
-                else if(commander3.colorCost.t == 2 && !twoDropDict.has(pipCode)){
+                else if(commander3.colorCost.t - commander3.discount == 2 && !twoDropDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     twoDropDict.set(pipCode, castDistro.slice());
                 }
-                else if(commander3.colorCost.t == 3 && !threeDropDict.has(pipCode)){
+                else if(commander3.colorCost.t - commander3.discount == 3 && !threeDropDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
                     threeDropDict.set(pipCode, castDistro.slice());
@@ -1543,57 +1585,57 @@
             let allCards = new Array();
             if(commander1){
                 let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
-                let turnCastDist = turnsToCast(commander1.colorCost);
-                let cmc = Math.min(commander1.colorCost.t, 12);
+                let turnCastDist = turnsToCast(commander1.colorCost, commander1.discount);
+                let cmc = Math.min(commander1.colorCost.t - commander1.discount, 12);
                 let onCurveRate = turnCastDist[cmc];
-                let avgDelay = mean(turnCastDist) - commander1.colorCost.t;
+                let avgDelay = mean(turnCastDist) - commander1.colorCost.t + commander1.discount;
                 cmcOnCurve += onCurveRate * cmc * weight;
                 totalCmcDelay += avgDelay * cmc * weight;
                 totalCmc += cmc * weight;
-                if(!costsCovered.has(commander1.mana_cost)){
-                    costsCovered.add(commander1.mana_cost);
+                if(!costsCovered.has(factorDiscount(commander1.mana_cost, commander1.discount))){
+                    costsCovered.add(factorDiscount(commander1.mana_cost, commander1.discount));
                 }
                 allCards.push([commander1.name, onCurveRate, avgDelay]);
             }
             if(commander2){
                 let weight = document.getElementById("cmdr2-weight").selectedOptions[0].value;
-                let turnCastDist = turnsToCast(commander2.colorCost)
-                let cmc = Math.min(commander2.colorCost.t, 12);
+                let turnCastDist = turnsToCast(commander2.colorCost, commander2.discount)
+                let cmc = Math.min(commander2.colorCost.t - commander2.discount, 12);
                 let onCurveRate = turnCastDist[cmc];
-                let avgDelay = mean(turnCastDist) - commander2.colorCost.t;
+                let avgDelay = mean(turnCastDist) - commander2.colorCost.t + commander2.discount;
                 cmcOnCurve += onCurveRate * cmc * weight;
                 totalCmcDelay += avgDelay * cmc * weight;
                 totalCmc += cmc * weight;
-                if(!costsCovered.has(commander2.mana_cost)){
-                    costsCovered.add(commander2.mana_cost);
+                if(!costsCovered.has(factorDiscount(commander2.mana_cost, commander2.discount))){
+                    costsCovered.add(factorDiscount(commander2.mana_cost, commander2.discount));
                 }
                 allCards.push([commander2.name, onCurveRate, avgDelay]);
             }
             if(commander3){
                 let weight = document.getElementById("cmdr3-weight").selectedOptions[0].value;
-                let turnCastDist = turnsToCast(commander3.colorCost)
-                let cmc = Math.min(commander3.colorCost.t, 12);
+                let turnCastDist = turnsToCast(commander3.colorCost, commander3.discount);
+                let cmc = Math.min(commander3.colorCost.t - commander3.discount, 12);
                 let onCurveRate = turnCastDist[cmc];
-                let avgDelay = mean(turnCastDist) - commander3.colorCost.t;
+                let avgDelay = mean(turnCastDist) - commander3.colorCost.t + commander3.discount;
                 cmcOnCurve += onCurveRate * cmc * weight;
                 totalCmcDelay += avgDelay * cmc * weight;
                 totalCmc += cmc * weight;
-                if(!costsCovered.has(commander3.mana_cost)){
-                    costsCovered.add(commander3.mana_cost);
+                if(!costsCovered.has(factorDiscount(commander3.mana_cost, commander3.discount))){
+                    costsCovered.add(factorDiscount(commander3.mana_cost, commander3.discount));
                 }
                 allCards.push([commander3.name, onCurveRate, avgDelay]);
             }
             for(let i = 0; i < deckList.length; i++){
-                if(!deckList[i].card_type.includes("Land")){
-                    let turnCastDist = turnsToCast(deckList[i].colorCost)
-                    let cmc = Math.min(deckList[i].colorCost.t, 12);
+                if(!deckList[i].card_type.includes("Land") && !deckList[i].ignore){
+                    let turnCastDist = turnsToCast(deckList[i].colorCost, deckList[i].discount);
+                    let cmc = Math.min(deckList[i].colorCost.t - deckList[i].discount, 12);
                     let onCurveRate = turnCastDist[cmc];
-                    let avgDelay = mean(turnCastDist) - deckList[i].colorCost.t;
+                    let avgDelay = mean(turnCastDist) - deckList[i].colorCost.t + deckList[i].discount;
                     cmcOnCurve += onCurveRate * cmc;
                     totalCmcDelay += avgDelay * cmc;
                     totalCmc += cmc;
-                    if(!costsCovered.has(deckList[i].mana_cost)){
-                        costsCovered.add(deckList[i].mana_cost);
+                    if(!costsCovered.has(factorDiscount(deckList[i].mana_cost, deckList[i].discount))){
+                        costsCovered.add(factorDiscount(deckList[i].mana_cost, deckList[i].discount));
                         allCards.push([deckList[i].name, onCurveRate, avgDelay]);
                     }
                 }
@@ -1784,6 +1826,52 @@
             let landCountBackup = landCount;
             let landTypesBackup = landTypes.slice();
             let startTime = Date.now();
+            let ignoreListContents = document.getElementById('ignore').value.split('\n');
+            for(let i = 0; i < ignoreListContents.length; i++){
+                let listItem = ignoreListContents[i];
+                //console.log(listItem);
+                let cardName = "";
+                let ignore = false;
+                let discount = 0;
+                if(listItem.charAt(0) == '-'){
+                    cardName = listItem.substring(1);
+                    ignore = true;
+                }
+                else if(listItem.includes(" ")){
+                    cardName = listItem.substring(listItem.indexOf(" ") + 1);
+                    discount = parseInt(listItem.substring(0, listItem.indexOf(" ")));
+                    //ignoreCards.push([cardName, discount]);
+                }
+                if(cardName != ""){
+                    for(let j = 0; j < deckList.length; j++){
+                        if(deckList[j].name.toLowerCase().includes(cardName.toLowerCase())){
+                            console.log(cardName);
+                            deckList[j].ignore = ignore;
+                            deckList[j].discount = discount;
+                        }
+                    }
+                    if(commander1 && commander1.name.toLowerCase().includes(cardName.toLowerCase())){
+                        console.log(cardName);
+                        commander1.ignore = ignore;
+                        commander1.discount = discount;
+                    }
+                    if(commander2 && commander2.name.toLowerCase().includes(cardName.toLowerCase())){
+                        console.log(cardName);
+                        commander2.ignore = ignore;
+                        commander2.discount = discount;
+                    }
+                    if(commander3 && commander3.name.toLowerCase().includes(cardName.toLowerCase())){
+                        console.log(cardName);
+                        commander3.ignore = ignore;
+                        commander3.discount = discount;
+                    }
+                }
+            }
+
+            for(let i = 0; i < deckList.length; i++){
+                testDict[deckList[i].name].ignore = deckList[i].ignore;
+                testDict[deckList[i].name].discount = deckList[i].discount;
+            }
 
             //remove previous errors
             clearError("color-analyzer-result-box");
@@ -1813,6 +1901,20 @@
                 return;
             }
 
+            let cardTable = document.getElementById("color-card-table");
+            if(cardTable != null){
+                cardTable.remove();
+            }
+            cardTable = document.createElement("table");
+            cardTable.id = "color-card-table";
+            cardTable.appendChild(tableRow(["Card Name", "Cost", "Cast Rate", "Avg. Delay"], "th"));
+
+            allCards = allCards.sort(cardCompare);
+
+            for(let i = 0; i < Math.min(allCards.length, 10); i++){
+                cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(factorDiscount(testDict[allCards[i][0]].mana_cost, testDict[allCards[i][0]].discount)), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td"));
+            }
+
             landCount = landCountBackup;
             landTypes = landTypesBackup;
 
@@ -1835,20 +1937,6 @@
                 table.appendChild(testVariant("+1 Forest", createDiff([[16, 1]]), baseRate, baseDelay));
             }
             //document.getElementById("color-analyzer-result-box").appendChild(table);
-
-            let cardTable = document.getElementById("color-card-table");
-            if(cardTable != null){
-                cardTable.remove();
-            }
-            cardTable = document.createElement("table");
-            cardTable.id = "color-card-table";
-            cardTable.appendChild(tableRow(["Card Name", "Cost", "Cast Rate", "Avg. Delay"], "th"));
-
-            allCards = allCards.sort(cardCompare);
-
-            for(let i = 0; i < Math.min(allCards.length, 10); i++){
-                cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(testDict[allCards[i][0]].mana_cost), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td"));
-            }
 
             // create table for tainted and verge lands if needed
             landCount = landCountBackup;
@@ -1897,6 +1985,9 @@
             else{
                 createTableTab("color-test", "color-analyzer-result-box", ["Overall Performance", "Individual Cards"], [table, cardTable]);
             }
+
+            let ignoreList = document.getElementById("ignore-list");
+            ignoreList.hidden = false;
 
             endTime = Date.now();
             console.log(`Execution time: ${endTime - startTime} ms`);
@@ -2557,6 +2648,7 @@
             </select>
             <br>
         </div>
+        <p>Partial matches are accepted ("atraxa", "yuriko", "kenrith", etc.)</p>
         <p>
             <input type="button" value="Load" onclick="loadDict()">
         </p>
@@ -2578,6 +2670,14 @@
         </p>    
         <div class="result-box" id="color-analyzer-result-box">
             <p id='color-analyzer-result' class="result-text"></p>
+        </div>
+        <div id="ignore-list" hidden>
+            <p class="prompt">List any cards you want to ignore or discount</p>
+            <textarea id="ignore" rows="5" cols="50"></textarea>
+            <p>&#34;-CARDNAME&#34; will remove a card from the analysis<br>
+            &#34;3 CARDNAME&#34; will reduce its cost by 3<br>
+            Click Compute again to factor in these changes<br>
+            (Partial matches are accepted here as well)</p>
         </div>
     </div>
     <div class="analyzer" name="tapCalc">
