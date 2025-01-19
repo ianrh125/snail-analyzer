@@ -114,8 +114,33 @@
             padding-left: 5px;
             padding-right: 5px;
         }
-        .table-num{
-            color: green;
+        .table-num-green{
+            text-shadow: 0 0 6px #8f8;
+            /*color: #0a0;*/
+            /*color: #070;*/
+            /*display: inline-block; /* allows this and result to display in one line */
+            margin: 0px;
+            text-align: center;
+        }
+        .table-num-yellow{
+            text-shadow: 0 0 6px #ff9;
+            /*color: #880;*/
+            /*color: #222;*/
+            /*display: inline-block; /* allows this and result to display in one line */
+            margin: 0px;
+            text-align: center;
+        }
+        .table-num-orange{
+            text-shadow: 0 0 6px #fa5;
+            /*color: #d70;*/
+            /*color: #940;*/
+            /*display: inline-block; /* allows this and result to display in one line */
+            margin: 0px;
+            text-align: center;
+        }
+        .table-num-red{
+            text-shadow: 0 0 6px #f55;
+            /*color: #a00;*/
             /*display: inline-block; /* allows this and result to display in one line */
             margin: 0px;
             text-align: center;
@@ -1341,14 +1366,16 @@
 
         // procedurally add rows to the analysis output table
         // type: "th" for table header, "td" for table data
-        function tableRow(rowData, type){
+        function tableRow(rowData, type, rowClass){
             let newRow = document.createElement("tr");
             for(let i = 0; i < rowData.length; i++){
                 let cell = document.createElement(type);
                 cell.innerText = rowData[i];
-                if(i > 0 && type == "td"){
-                    cell.classList.add("table-num");
+                //if(i > 0 && type == "td"){
+                if(rowClass[i]){
+                    cell.classList.add(rowClass[i]);
                 }
+                //}
                 newRow.appendChild(cell);
             }
             return newRow;
@@ -1676,7 +1703,26 @@
             }
             landCount = landCountBackup;
             landTypes = landTypesBackup.slice();
-            return tableRow([name, rateText, delayText], "td");
+            let rowClass = ["", "", ""];
+            if(newRate >= 0.015){
+                rowClass[1] = "table-num-green";
+            } else if (newRate >= 0.0075){
+                rowClass[1] = "table-num-yellow";
+            } else if (newRate >= 0){
+                rowClass[1] = "table-num-orange";
+            } else {
+                rowClass[1] = "table-num-red";
+            }
+            if(newDelay <= -0.05){
+                rowClass[2] = "table-num-green";
+            } else if (newDelay <= -0.025){
+                rowClass[2] = "table-num-yellow";
+            } else if (newDelay <= 0){
+                rowClass[2] = "table-num-orange";
+            } else {
+                rowClass[2] = "table-num-red";
+            }
+            return tableRow([name, rateText, delayText], "td", rowClass);
         }
 
         function createDiff(indices){
@@ -1883,14 +1929,33 @@
             }
             table = document.createElement("table");
             table.id = "color-output-table";
-            table.appendChild(tableRow(["Manabase Variation", "Cast Rate", "Average Delay"], "th"));
+            table.appendChild(tableRow(["Manabase Variation", "Cast Rate", "Average Delay"], "th", ["","",""]));
 
             // run analysis on base deck
             let analResult = deepAnal(true);
             let baseRate = analResult[0];
             let baseDelay = analResult[1];
             let allCards = analResult[2];
-            table.appendChild(tableRow(["Current Manabase", (baseRate * 100).toFixed(1) + "%", baseDelay.toFixed(3)], "td"));
+            let rowClass = ["", "", ""];
+            if(baseRate >= 0.87){
+                rowClass[1] = "table-num-green";
+            } else if (baseRate >= 0.8){
+                rowClass[1] = "table-num-yellow";
+            } else if (baseRate >= 0.73){
+                rowClass[1] = "table-num-orange";
+            } else {
+                rowClass[1] = "table-num-red";
+            }
+            if(baseDelay <= 0.4){
+                rowClass[2] = "table-num-green";
+            } else if (baseDelay <= 0.7){
+                rowClass[2] = "table-num-yellow";
+            } else if (baseRate <= 1){
+                rowClass[2] = "table-num-orange";
+            } else {
+                rowClass[2] = "table-num-red";
+            }
+            table.appendChild(tableRow(["Current Manabase", (baseRate * 100).toFixed(1) + "%", baseDelay.toFixed(3)], "td", rowClass));
 
             let endTime = Date.now();
             if(endTime - startTime > 1500){
@@ -1907,12 +1972,31 @@
             }
             cardTable = document.createElement("table");
             cardTable.id = "color-card-table";
-            cardTable.appendChild(tableRow(["Card Name", "Cost", "Cast Rate", "Avg. Delay"], "th"));
+            cardTable.appendChild(tableRow(["Card Name", "Cost", "Cast Rate", "Avg. Delay"], "th", ["","","",""]));
 
             allCards = allCards.sort(cardCompare);
 
             for(let i = 0; i < Math.min(allCards.length, 10); i++){
-                cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(factorDiscount(testDict[allCards[i][0]].mana_cost, testDict[allCards[i][0]].discount)), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td"));
+                rowClass = ["", "", "", ""];
+                if(allCards[i][1] >= 0.87){
+                    rowClass[2] = "table-num-green";
+                } else if (allCards[i][1] >= 0.8){
+                    rowClass[2] = "table-num-yellow";
+                } else if (allCards[i][1] >= 0.73){
+                    rowClass[2] = "table-num-orange";
+                } else {
+                    rowClass[2] = "table-num-red";
+                }
+                if(allCards[i][2] <= 0.4){
+                    rowClass[3] = "table-num-green";
+                } else if (allCards[i][2] <= 0.7){
+                    rowClass[3] = "table-num-yellow";
+                } else if (allCards[i][2] <= 1){
+                    rowClass[3] = "table-num-orange";
+                } else {
+                    rowClass[3] = "table-num-red";
+                }
+                cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(factorDiscount(testDict[allCards[i][0]].mana_cost, testDict[allCards[i][0]].discount)), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td", rowClass));
             }
 
             landCount = landCountBackup;
@@ -1957,12 +2041,13 @@
                         newCondList.push(condLands[i][2]);
                     }
                 }
-                condTable.appendChild(tableRow(["Turn"].concat(newCondNames), "th"));
+                condTable.appendChild(tableRow(["Turn"].concat(newCondNames), "th", ["",""]));
                 // process for each turn and each land
                 for(let turn = 2; turn < 8; turn++){
                     let myLandCount = landCount;
                     let row = ["Turn " + turn];
                     let landsDrawn = landsAtTurn(turn);
+                    rowClass = [""];
                     for(let land = 0; land < newCondList.length; land++){
                         let matches = typeSearch(newCondList[land].replaceAll("a ","").replaceAll("an ","").split(" or "));
                         
@@ -1977,8 +2062,17 @@
                             odds += drawTypeMin(myLandCount - 1, matches, Math.max(0, i - 1), 1) * landsDrawn[i] * i / avgLands;
                         }
                         row.push((odds * 100).toFixed(1) + "%");
+                        if(odds >= 0.85){
+                            rowClass.push("table-num-green");
+                        } else if(odds >= 0.7){
+                            rowClass.push("table-num-yellow");
+                        } else if(odds >= 0.5){
+                            rowClass.push("table-num-orange");
+                        } else{
+                            rowClass.push("table-num-red");
+                        }
                     }
-                    condTable.appendChild(tableRow(row, "td"));
+                    condTable.appendChild(tableRow(row, "td", rowClass));
                 }
                 createTableTab("color-test", "color-analyzer-result-box", ["Overall Performance", "Individual Cards", "Conditional Lands"], [table, cardTable, condTable]);
             }
@@ -2574,14 +2668,24 @@
             }
             table = document.createElement("table");
             table.id = "tap-test-table";
-            table.appendChild(tableRow(["Land", "Tap Chance"], "th"));
+            table.appendChild(tableRow(["Land", "Tap Chance"], "th", ["",""]));
             for(let i = 0; i < deckList.length; i++){
                 if(deckList[i].card_type.includes("Land")){
                     let tap = pTap(deckList[i].mana_source, turns);
                     tapTotal += deckList[i].count * tap;
                     untapTotal += deckList[i].count * (1 - tap);
                     if(tap > 0 && tap < 1){
-                        table.appendChild(tableRow([deckList[i].name, (tap * 100).toFixed(1) + "%"], "td"));
+                        let rowClass = ["", ""];
+                        if(tap <= 0.15){
+                            rowClass[1] = "table-num-green";
+                        } else if(tap <= 0.3){
+                            rowClass[1] = "table-num-yellow";
+                        } else if(tap <= 0.6){
+                            rowClass[1] = "table-num-orange";
+                        } else{
+                            rowClass[1] = "table-num-red";
+                        }
+                        table.appendChild(tableRow([deckList[i].name, (tap * 100).toFixed(1) + "%"], "td", rowClass));
                     }
                 }
             }
@@ -2671,7 +2775,7 @@
             <input type="button" id="color-compute-button" value="Compute" onclick="colorTest()"> Use the Deck Loader to select a deck
         </p>    
         <div class="result-box" id="color-analyzer-result-box">
-            <p id='color-analyzer-result' class="result-text"></p>
+            <p id='color-analyzer-result'></p>
         </div>
         <br>
         <button onclick="toggleIgnore()">Ignore or Discount cards</button>
