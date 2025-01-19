@@ -1901,6 +1901,7 @@
 
             let startTime = Date.now();
             let ignoreListContents = document.getElementById('ignore').value.split('\n');
+            // iterate through list of ignored cards
             for(let i = 0; i < ignoreListContents.length; i++){
                 let listItem = ignoreListContents[i];
                 //console.log(listItem);
@@ -1921,23 +1922,47 @@
                         if(deckList[j].name.toLowerCase().includes(cardName.toLowerCase())){
                             console.log(cardName);
                             deckList[j].ignore = ignore;
-                            deckList[j].discount = discount;
+                            if(deckList[j].colorCost.t >= discount){
+                                deckList[j].discount = discount;
+                            }
+                            else{
+                                deckList[j].discount = deckList[j].colorCost.t;
+                                addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
+                            }
                         }
                     }
                     if(commander1 && commander1.name.toLowerCase().includes(cardName.toLowerCase())){
                         console.log(cardName);
                         commander1.ignore = ignore;
-                        commander1.discount = discount;
+                        if(commander1.colorCost.t >= discount){
+                            commander1.discount = discount;
+                        }
+                        else{
+                            commander1.discount = commander1.colorCost.t;
+                            addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
+                        }
                     }
                     if(commander2 && commander2.name.toLowerCase().includes(cardName.toLowerCase())){
                         console.log(cardName);
                         commander2.ignore = ignore;
-                        commander2.discount = discount;
+                        if(commander2.colorCost.t >= discount){
+                            commander2.discount = discount;
+                        }
+                        else{
+                            commander2.discount = commander2.colorCost.t;
+                            addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
+                        }
                     }
                     if(commander3 && commander3.name.toLowerCase().includes(cardName.toLowerCase())){
                         console.log(cardName);
                         commander3.ignore = ignore;
-                        commander3.discount = discount;
+                        if(commander3.colorCost.t >= discount){
+                            commander3.discount = discount;
+                        }
+                        else{
+                            commander3.discount = commander3.colorCost.t;
+                            addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
+                        }
                     }
                 }
             }
