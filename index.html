@@ -1136,6 +1136,7 @@
                 if(cardList[c].includes(" *F*")){
                     cardList[c] = cardList[c].substring(0, cardList[c].indexOf(" *F*"));
                 }
+                cardList[c] = cardList[c].replaceAll("%26", "&");
                 let name = cardList[c];
                 let cut = 0
                 while(name.charAt(cut) != ' '){
@@ -1910,6 +1911,9 @@
                 let discount = 0;
                 if(listItem.charAt(0) == '-'){
                     cardName = listItem.substring(1);
+                    while(cardName.charAt(0) = " "){
+                        cardName = cardName.substring(1);
+                    }
                     ignore = true;
                 }
                 else if(listItem.includes(" ")){
