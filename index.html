@@ -2032,32 +2032,32 @@
 
             // calculate for +1 wastes variant
             let wastesVariant = testVariant("+1 Wastes", createDiff([[0, 1]]), baseRate, baseDelay);
-            genericBoost = parseFloat(wastesVariant[2].substring(1,6));
+            genericBoost = -parseFloat(wastesVariant[2].substring(0,6));
             table.appendChild(tableRow(wastesVariant, "td", ["", "table-num", "table-num"]));
             // calculate for variants with all the colors present in the deck
             if(white > 0){
                 let plainsVariant = testVariant("+1 Plains", createDiff([[1, 1]]), baseRate, baseDelay);
-                whiteBoost = parseFloat(plainsVariant[2].substring(1,6)) - genericBoost;
+                whiteBoost = -parseFloat(plainsVariant[2].substring(0,6)) - genericBoost;
                 table.appendChild(tableRow(plainsVariant, "td", ["", "table-num", "table-num"]));
             }
             if(blue > 0){
                 let islandVariant = testVariant("+1 Island", createDiff([[2, 1]]), baseRate, baseDelay);
-                blueBoost = parseFloat(islandVariant[2].substring(1,6)) - genericBoost;
+                blueBoost = -parseFloat(islandVariant[2].substring(0,6)) - genericBoost;
                 table.appendChild(tableRow(islandVariant, "td", ["", "table-num", "table-num"]));
             }
             if(black > 0){
                 let swampVariant = testVariant("+1 Swamp", createDiff([[4, 1]]), baseRate, baseDelay);
-                blackBoost = parseFloat(swampVariant[2].substring(1,6)) - genericBoost;
+                blackBoost = -parseFloat(swampVariant[2].substring(0,6)) - genericBoost;
                 table.appendChild(tableRow(swampVariant, "td", ["", "table-num", "table-num"]));
             }
             if(red > 0){
                 let mountainVariant = testVariant("+1 Mountain", createDiff([[8, 1]]), baseRate, baseDelay);
-                redBoost = parseFloat(mountainVariant[2].substring(1,6)) - genericBoost;
+                redBoost = -parseFloat(mountainVariant[2].substring(0,6)) - genericBoost;
                 table.appendChild(tableRow(mountainVariant, "td", ["", "table-num", "table-num"]));
             }
             if(green > 0){
                 let forestVariant = testVariant("+1 Forest", createDiff([[16, 1]]), baseRate, baseDelay);
-                greenBoost = parseFloat(forestVariant[2].substring(1,6)) - genericBoost;
+                greenBoost = -parseFloat(forestVariant[2].substring(0,6)) - genericBoost;
                 table.appendChild(tableRow(forestVariant, "td", ["", "table-num", "table-num"]));
             }
             //document.getElementById("color-analyzer-result-box").appendChild(table);
