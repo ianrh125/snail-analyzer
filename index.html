@@ -1461,7 +1461,7 @@
                 }
                 else if(deckList[i].mana_source.cycling != false && getColorCost(deckList[i].mana_source.cycling.cost).t == x){
                     if(deckList[i].mana_source.cycling.lands != false){
-                        let typeMult = turnsToCast(getColorCost(deckList[i].mana_source.cycling.cost))[x];
+                        let typeMult = turnsToCast(getColorCost(deckList[i].mana_source.cycling.cost), 0)[x];
                         let addLandTypes = getFetchEquivalent(deckList[i].mana_source.cycling.lands);
                         for(let i = 0; i < 32; i++){
                             landTypes[i] += addLandTypes[i] * deckList[i].count * typeMult;
@@ -2692,9 +2692,9 @@
                         wildcards + 1, wildPicks - 1, turnsRemaining - 1, newMin, newMax);
                     newMin = newMax;
                 }
-                if(Math.abs(newMin - max) > 0.001 * span){
+                /*if(Math.abs(newMin - max) > 0.001 * span){
                     console.log("Something has gone wrong");
-                }
+                }*/
             }
             //tapAnalDict.set(inputToKey,value);
             return value;
