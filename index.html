@@ -281,6 +281,7 @@
         var oneDropDict;
         var twoDropDict;
         var threeDropDict;
+        var fourDropDict;
         var mullLands;
 
         var white;
@@ -909,6 +910,9 @@
             else if(cost.t - discount == 3){
                 pipReqs = threeDropDict.get(pipsToNum(cost)).slice();
             }
+            else if(cost.t - discount == 4){
+                pipReqs = fourDropDict.get(pipsToNum(cost)).slice();
+            }
             else{
                 let numfromPips = pipsToNum(cost)
                 pipReqs = manaDict.get(numfromPips).slice();
@@ -1525,6 +1529,10 @@
             threeDropDict = xDropDict(3);
             scanForSources(3);
             calcMullLands(landCount);
+
+            fourDropDict = xDropDict(4);
+            scanForSources(4);
+            calcMullLands(landCount);
             
             // calculate for 4 and above based on lands, 1, 2, and 3
             for(let i = 0; i < deckList.length; i++){
@@ -1556,6 +1564,11 @@
                     castDistro = pipDist(pips);
                     threeDropDict.set(pipCode, castDistro.slice());
                 }
+                else if(commander1.colorCost.t - commander1.discount == 4 && !fourDropDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    fourDropDict.set(pipCode, castDistro.slice());
+                }
                 else if(!manaDict.has(pipCode)){
                     iterations = 0;
                     castDistro = pipDist(pips);
@@ -1579,6 +1592,11 @@
                     iterations = 0;
                     castDistro = pipDist(pips);
                     threeDropDict.set(pipCode, castDistro.slice());
+                }
+                else if(commander2.colorCost.t - commander2.discount == 4 && !fourDropDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    fourDropDict.set(pipCode, castDistro.slice());
                 }
                 else if(!manaDict.has(pipCode)){
                     iterations = 0;
@@ -1604,6 +1622,11 @@
                     iterations = 0;
                     castDistro = pipDist(pips);
                     threeDropDict.set(pipCode, castDistro.slice());
+                }
+                else if(commander3.colorCost.t - commander3.discount == 4 && !fourDropDict.has(pipCode)){
+                    iterations = 0;
+                    castDistro = pipDist(pips);
+                    fourDropDict.set(pipCode, castDistro.slice());
                 }
                 else if(!manaDict.has(pipCode)){
                     iterations = 0;
