@@ -97,6 +97,7 @@
         .tab-table{
             border-top: none;
             margin-top: 0px;
+            margin-bottom: 8px;
         }
         th {
             border: 1px solid rgb(120 120 120);
@@ -186,7 +187,7 @@
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
             border-bottom: none;
-            margin-top: 8px;
+            /*margin-top: 8px;*/
         }
 
         /* Style the buttons inside the tab */
@@ -2148,6 +2149,12 @@
             else{
                 createTableTab("color-test", "color-analyzer-result-box", ["Overall Performance", "Individual Cards"], [table, cardTable]);
             }
+            if(result != null){
+                result.remove();
+            }
+            result = document.createElement("text");
+            result.id = "color-analyzer-result";
+            result.classList.add("result-text");
             let descriptionText = "Based on this calculation,<br>";
             if(genericBoost < 0.02){
                 descriptionText += "<strong>land count</strong> is <strong>not a problem</strong>";
@@ -2158,12 +2165,29 @@
             } else{
                 descriptionText += "<strong>land count</strong> is a <strong>critical</strong> problem";
             }
+            
             descriptionText += describeDelayImprovement("white", whiteBoost)
                  + describeDelayImprovement("blue", blueBoost)
                  + describeDelayImprovement("black", blackBoost)
                  + describeDelayImprovement("red", redBoost)
-                 + describeDelayImprovement("green", greenBoost) + ".";
+                 + describeDelayImprovement("green", greenBoost);
+            descriptionText += ".<br> Overall, your manabase is ";
+            if(baseDelay < 0.3){
+                descriptionText += "<strong>very strong</strong>.";
+            } else if(baseDelay < 0.45){
+                descriptionText += "<strong>strong</strong>.";
+            } else if(baseDelay < 0.65){
+                descriptionText += "<strong>functional</strong>.";
+            } else if(baseDelay < 1.00){
+                descriptionText += "<strong>inconsistent</strong>.";
+            } else if(baseDelay < 1.40){
+                descriptionText += "<strong>struggling</strong>.";
+            } else {
+                descriptionText += "<strong>straight up not having a good time</strong>.";
+            }
             result.innerHTML = descriptionText;
+            document.getElementById("color-analyzer-result-box").appendChild(result);
+
             //document.getElementById("tap-analyzer-result-box").appendChild(table);
 
             endTime = Date.now();
