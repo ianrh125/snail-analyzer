@@ -1198,6 +1198,12 @@
                 deckSize--;
             }
             console.log("Deck size: " + deckSize + " cards");
+            if(deckSize != 99 && deckSize != 60 && deckSize != 40){
+                addError("load-result-box", "Warning: This deck has " + deckSize + " cards in it. If this sounds wrong, there a few things you can do:<br>"
+                    + "- Make sure any commanders and companions are identified<br>"
+                    + "- Make sure your sideboard isn't entered with your decklist<br>"
+                    + "- If you exported from Moxfield using \"Copy for MTGA\", it will remove any cards that aren't on Arena. Use \"Copy for MTGO\" instead");
+            }
 
             for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
                 let name = cardList[c];
@@ -1310,22 +1316,22 @@
             }
             console.log("lands: " + landCount);
             if(commanderName1 != "nocard" && commander1found == 0){
-                addError("load-result-box", "Error: the name \"" + commanderName1 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
+                addError("load-result-box", "Error: The name \"" + commanderName1 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
             }
             if(commander1found > 1){
-                addError("load-result-box", "Error: the name \"" + commanderName1 + "\" matched with multiple cards in your decklist. Try using a larger portion of the card's full name");
+                addError("load-result-box", "Error: The name \"" + commanderName1 + "\" matched with multiple cards in your decklist. Try using a larger portion of the card's full name");
             }
             if(commanderName2 != "nocard" && commander2found == 0){
-                addError("load-result-box", "Error: the name \"" + commanderName2 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
+                addError("load-result-box", "Error: The name \"" + commanderName2 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
             }
             if(commander2found > 1){
-                addError("load-result-box", "Error: the name \"" + commanderName2 + "\" matched with multiple cards in your decklist. Try using a larger portion of the card's full name");
+                addError("load-result-box", "Error: The name \"" + commanderName2 + "\" matched with multiple cards in your decklist. Try using a larger portion of the card's full name");
             }
             if(commanderName3 != "nocard" && commander3found == 0){
-                addError("load-result-box", "Error: the name \"" + commanderName3 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
+                addError("load-result-box", "Error: The name \"" + commanderName3 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
             }
             if(commander3found > 1){
-                addError("load-result-box", "Error: the name \"" + commanderName3 + "\" matched with multiple cards in your decklist. Try using a larger portion of the card's full name");
+                addError("load-result-box", "Error: The name \"" + commanderName3 + "\" matched with multiple cards in your decklist. Try using a larger portion of the card's full name");
             }
 
             // turn on estimation config options for players with 4 or 5 color decks
@@ -1376,7 +1382,7 @@
         // for any error we want to display, print it to the output box
         function addError(resultBox, errorText){
             let error = document.createElement("div");
-            error.innerText = errorText;
+            error.innerHTML = errorText;
             error.classList.add("error-text");
             document.getElementById(resultBox).appendChild(error);
         }
