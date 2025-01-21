@@ -1959,6 +1959,24 @@
 
             let startTime = Date.now();
             let ignoreListContents = document.getElementById('ignore').value.split('\n');
+            // reset discount and ignore status
+            for(let i = 0; i < deckList.length; i++){
+                deckList[i].discount = 0;
+                deckList[i].ignore = false;
+            }
+            if(commander1){
+                commander1.discount = 0;
+                commander1.ignore = false;
+            }
+            if(commander2){
+                commander2.discount = 0;
+                commander2.ignore = false;
+            }
+            if(commander3){
+                commander3.discount = 0;
+                commander3.ignore = false;
+            }
+
             // iterate through list of ignored cards
             for(let i = 0; i < ignoreListContents.length; i++){
                 let listItem = ignoreListContents[i];
