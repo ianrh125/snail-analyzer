@@ -670,11 +670,20 @@
                 mullDist[i] = openingDist[i];
             }
 
-            //free mull, shoot for at least three
-            mullAmount = mullDist[0] + mullDist[1] + mullDist[2] + mullDist[6] + mullDist[7];
-            for(let i = 3; i < 6; i++){
-                mullLands[i] += mullDist[i];
+            //free mull, shoot for at least three if deck is a commander deck
+            if(deckSize >= 90){
+                mullAmount = mullDist[0] + mullDist[1] + mullDist[2] + mullDist[6] + mullDist[7];
+                for(let i = 3; i < 6; i++){
+                    mullLands[i] += mullDist[i];
+                }
             }
+            else{
+                mullAmount = mullDist[0] + mullDist[1] + mullDist[6] + mullDist[7];
+                for(let i = 2; i < 6; i++){
+                    mullLands[i] += mullDist[i];
+                }
+            }
+            
             mullDist = new Array(8).fill(0);
 
             for(let i = 0; i <= 7; i++){
@@ -1086,13 +1095,17 @@
             let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "").replaceAll(/#.*\n/g, "\n").replaceAll("+", "PLUS");
             let splitL = sanitizedL.split("\n");
             let strippedL = "";
+            let inSideboard = false;
             for(let i = 0; i < splitL.length; i++){
-                if(splitL[i] == "Sideboard"){
-                    break;
+                if(splitL[i].toLowerCase().includes("sideboard")){
+                    inSideboard = true
                 }
                 let first = splitL[i].charAt(0);
-                if(first >= '1' && first <= '9'){
+                if(first >= '1' && first <= '9' && !inSideboard){
                     strippedL = strippedL + splitL[i] + "NEXT_CARD";
+                }
+                if(splitL[i] == ""){
+                    inSideboard = false;
                 }
             }
             if(strippedL != lastDecklist){
@@ -1196,7 +1209,6 @@
             if(deckSize != 100 && deckSize != 60 && deckSize != 40){
                 addError("load-result-box", "Warning: This deck has " + deckSize + " cards in it. If this sounds wrong, there a few things you can do:<br>"
                     + "- Make sure any commanders and companions are identified<br>"
-                    + "- Make sure your sideboard isn't entered with your decklist<br>"
                     + "- If you exported from Moxfield using \"Copy for MTGA\", it will remove any cards that aren't on Arena. Use \"Copy for MTGO\" instead");
             }
             if(commanderName1 != "nocard"){
@@ -2928,9 +2940,9 @@
     </script>
     <div class="analyzer" name="deckEntry">
         <p class="title">Deck Loader</p>
-        <p class="prompt"> Paste your decklist here (including your commander)</p>
+        <p class="prompt"> Paste your decklist here (including any commanders or companions)</p>
         <textarea id="decklist" rows="10" cols="50" placeholder="Paste your exported decklist here (format: '1 sol ring' or similar)"></textarea>
-        <p class="prompt"> Name of commander(s) </p>
+        <p class="prompt"> Names of Commanders (if any) </p>
         <input type="text" class="commander-name" id="commander-name-1" placeholder="Commander">
         <div class="commander-weight hidden">
             <br>
