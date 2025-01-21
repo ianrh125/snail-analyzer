@@ -1140,7 +1140,7 @@
             condLands = [];
             condNames = [];
             
-            let unique
+            let uniqueCards = new Map();
             // read in cards from decklist
             for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
                 if(cardList[c].includes(" (")){
@@ -1225,7 +1225,14 @@
                 else if(card == undefined){
                     addError("load-result-box", "Error: \"" + name + "\" came back as undefined");
                 }
+                else if(uniqueCards.has(name)){
+                    deckList[uniqueCards.get(name)].count += count;
+                    if(card.card_type.includes("Land")){
+                        landCount += count;
+                    }
+                }
                 else{
+                    uniqueCards.set(name, deckList.length);
                     card.name = name;
                     let cost = card.mana_cost;
                     let colorCost = getColorCost(cost);
