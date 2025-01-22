@@ -2536,6 +2536,10 @@
             let relevantNL = landOverlap - landCount;
             let relevantLands = relevantCards - relevantNL;
             let tapped = 0;
+            if(types[0] == "Elemental"){
+                // handle weird Flamekin Village Interaction
+                relevantLands = 0;
+            }
             if(relevantLands == 0 && relevantNL == 0){
                 return 1;
             }
@@ -2547,20 +2551,19 @@
                     }
                     tapped += pTap * lastLandTurn[i];
                 }
+                let totalLandDist = landsAtTurn(turns);
+                let avgLands = 0;
+                for(let i = 0; i < totalLandDist.length; i++){
+                    avgLands += i * totalLandDist[i];
+                }
+                return tapped / avgLands;
             }
             else if(relevantLands == 0 && relevantNL > 0){
-                tapped = (1 - drawTypeMin(deckSize-landCount, Math.round(relevantNL * 0.8), 7, 1));
+                return (1 - drawTypeMin(deckSize-landCount, Math.round(relevantNL * 0.8), 7, 1));
             }
             else if(relevantLands > 0 && relevantNL > 0){
                 addError("tap-analyzer-result-box", "You appear to be using reveal lands in a way we didn't know was possible. Go bother @rudeavocado in the Salubrious Snail discord server so he can add it to this tool");
             }
-
-            let totalLandDist = landsAtTurn(turns);
-            let avgLands = 0;
-            for(let i = 0; i < totalLandDist.length; i++){
-                avgLands += i * totalLandDist[i];
-            }
-            return tapped / avgLands;
         }
 
         function pTap(source, turns){
