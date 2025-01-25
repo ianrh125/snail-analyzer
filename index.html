@@ -64,29 +64,7 @@
             background-color: white;
             padding: 5px;
         }
-        .bar-graph{
-            border: 1px solid black;
-            padding: 5px;
-            margin: 5px;
-            min-height: 100px;
-            min-width: 464px;
-        }
-        .graph-bar{
-            display: inline-block;
-            margin: 2px;
-        }
-        .miss-bar{
-            border: 1px solid black;
-            /*border-bottom: 0px;*/
-            background-color: red;
-            width: 40px;
-        }
-        .hit-bar{
-            
-            border: 1px solid black;
-            background-color: #1166dd;
-            width: 40px;
-        }
+        /* tables to display the results for multiple spells, lands, and mana colors */
         table {
             border: 2px solid rgb(80 80 80);
             border-collapse: collapse;
@@ -94,15 +72,8 @@
             width: 100%;
             margin-top: 8px;
         }
-        .tab-table{
-            border-top: none;
-            margin-top: 0px;
-            margin-bottom: 8px;
-        }
         th {
             border: 1px solid rgb(120 120 120);
-            /*border-top: none;*/
-            /*outline: 1px solid rgb(120 120 120);*/
             background-color: #ddd;
             padding-top: 3px;
             padding-bottom: 3px;
@@ -122,32 +93,21 @@
         }
         .table-num-green{
             text-shadow: 0 0 8px #8f8;
-            /*color: #0a0;*/
-            /*color: #070;*/
-            /*display: inline-block; /* allows this and result to display in one line */
             margin: 0px;
             text-align: center;
         }
         .table-num-yellow{
             text-shadow: 0 0 8px #ff9;
-            /*color: #880;*/
-            /*color: #222;*/
-            /*display: inline-block; /* allows this and result to display in one line */
             margin: 0px;
             text-align: center;
         }
         .table-num-orange{
             text-shadow: 0 0 8px #fa5;
-            /*color: #d70;*/
-            /*color: #940;*/
-            /*display: inline-block; /* allows this and result to display in one line */
             margin: 0px;
             text-align: center;
         }
         .table-num-red{
             text-shadow: 0 0 8px #f55;
-            /*color: #a00;*/
-            /*display: inline-block; /* allows this and result to display in one line */
             margin: 0px;
             text-align: center;
         }
@@ -160,24 +120,17 @@
             background-color: #EEEEEE;
             padding: 10px; /* giving text room */
             margin: 5px; 
-            /*margin-left: 0px;*/
-            /*display: inline-block;*/
-            /*float:left;*/
         }
         .angry-title{
             color: red;
             font-weight: bold;
             margin: 0px; /* altering text spacing */
         }
-        .warning-box{
-            width: 800px;
-            border: 1px solid black;
-            background-color: mistyrose;
-            padding: 10px; /* giving text room */
-            margin: 5px; 
-            /*margin-left: 0px;*/
-            /*display: inline-block;*/
-            float:left;
+        /* Table with tabs to switch between multiple different tables in the same output box */
+        .tab-table{
+            border-top: none;
+            margin-top: 0px;
+            margin-bottom: 8px;
         }
         .tab {
             overflow: hidden;
@@ -223,6 +176,7 @@
             border-top: none;
         }
 
+        /* Avoid overflow on mobile */
         textarea{
             max-width: 100%;
         }
@@ -230,6 +184,8 @@
         select{
             max-width: 100%;
         }
+
+        /* Big clicky buttons */
         input[type=button]{
             background-color:#77ee77;
             border-radius: 15px;
@@ -255,6 +211,8 @@
             box-shadow: 0 1px #9b9;
             transform: translateY(2px);
         }
+
+        /* Hide commander weight drop-downs until user enters a commander*/
         .commander-name{
             margin: 1px;
         }
@@ -269,50 +227,51 @@
 </head>
 <body onload="disableButton()">
     <script>
-        var testDict;
+        var testDict; // map of loaded cards
 
-        var landTypes;
-        var landCount;
-        var iterations;
-        var deckList;
-        var deckSize;
-        var loadCount = 0;
+        var landTypes; // array of 32 integers, counting the number of lands producing each subset of the 5 colors
+        var landCount; // number of lands in deck
+        var iterations; // global count of iterations of recursive functions
+        var deckList; // array of cards in deck
+        var deckSize; // number of cards in deck
+        var loadCount = 0; // number of times the deck loader has been used
 
-        var manaDict;
-        var oneDropDict;
-        var twoDropDict;
-        var threeDropDict;
-        var fourDropDict;
-        var mullLands;
+        var oneDropDict; // map of mana costs to cast statistics for spells with cmc 1
+        var twoDropDict; // map of mana costs to cast statistics for spells with cmc 2
+        var threeDropDict; // map of mana costs to cast statistics for spells with cmc 3
+        var fourDropDict; // map of mana costs to cast statistics for spells with cmc 4
+        var manaDict; // map of mana costs to cast statistics for spells with cmc 5+
 
-        var white;
-        var blue;
-        var black;
-        var red;
-        var green;
+        var mullLands; // distribution of lands in hand after implementing Frank Karsten's mulligan policy
 
-        var approxColors;
-        var approxSamples;
-        var deckColors;
+        var white; // number of white symbols in costs
+        var blue; // number of blue symbols in costs
+        var black; // number of black symbols in costs
+        var red; // number of red symbols in costs
+        var green; // number of green symbols in costs
 
-        var commander1;
-        var commander2;
-        var commander3;
-        var lastDecklist;
+        var approxColors; // number of colors at which to use a limited number of samples instead of every combination of lands
+        var approxSamples; // number of samples to use
+        var deckColors; // number of different colors of mana in the deck
 
-        var plainsTypes;
-        var islandTypes;
-        var swampTypes;
-        var mountainTypes;
-        var forestTypes;
+        var commander1; // card data for a deck's Commander
+        var commander2; // card data for a deck's partner/background
+        var commander3; // card data for a deck's companion
 
-        var tapAnalDict;
+        var lastDecklist; // Last decklist sent to the server, make sure it isn't loaded twice
 
-        var condLands;
+        var plainsTypes; // types found on lands that also have plains as a type
+        var islandTypes; // types found on lands that also have plains as a type
+        var swampTypes; // types found on lands that also have plains as a type
+        var mountainTypes; // types found on lands that also have plains as a type
+        var forestTypes; // types found on lands that also have plains as a type
+
+        var condLands; // tracking lands like tainted or verge lands
         var condNames;
-        var lastLandTurn;
+        var lastLandTurn; // assuming a player starts with 7 cards and draws 1 card a turn, how many lands can they play before missing a land drop?
 
-        var ignoreCards;
+        var ignoreCards; // list of cards to be ignored from analysis
+        // staples to automatically discount
         const commonDiscounts = {
             "Blasphemous Act": 5,
             "The Great Henge": 4,
@@ -331,6 +290,7 @@
             "Excalibur, Sword of Eden": 7
         }
 
+        // Basic factorial function
         function fact(x){
             let y = x
             while(x>2){
@@ -341,11 +301,6 @@
             return y
         }
     
-        function choose(x,y){
-            let z = (fact(x))/(fact(y)*fact(x-y))
-            return z
-        }
-
         // In cases where we have x!/y! and x>y, it is effectively equal to (y+1)(y+2)(y+3)...(x-2)(x-1)x
         // So we could save a lot of computation by simply calculating it as such
         function partialFact(y, x){
@@ -358,34 +313,26 @@
             return z;
         }
 
+        // Revised implementation of the choose operation
+        // Cancel out certain factorial values in the numerator and denominator using partialFact
         function quickChoose(x, y){
             let z = partialFact(Math.max(y, x-y), x)/fact(Math.min(y, x-y));
             return z;
         }
         
+        // Basic sum function
         function sum(arr){
             return arr.reduce((a, b) => a + b, 0);
         }
 
-        // OLD ANALYSIS FUNCTIONS
-        // These functions are here from the old calculators. I could probably remove some, but they're not hurting anything
-
-        // These drawType functions are the foundation of most of the tools. They seem to be working well for me, but it might be good to be extra sure they're working right
-        // given deck size, type count, draw size, and quota, calculates the chance of drawing exactly the quota of that type
+        // Implementation of a hypergeometric PMF
+        // Given deck size, type count, draw size, and quota, calculates the chance of drawing exactly the quota of that type
         function drawType(allTotal, typeTotal, allDrawn, typeDrawn){
-            //let x = choose(allTotal-typeTotal, allDrawn-typeDrawn)*choose(typeTotal, typeDrawn)/choose(allTotal, allDrawn);
             let x = quickChoose(allTotal-typeTotal, allDrawn-typeDrawn)*quickChoose(typeTotal, typeDrawn)/quickChoose(allTotal, allDrawn);
             return x;
         }
 
-        function quickDrawType(allTotal, typeTotal, allDrawn, typeDrawn){
-            //let x = choose(allTotal-typeTotal, allDrawn-typeDrawn)*choose(typeTotal, typeDrawn)/choose(allTotal, allDrawn);
-            let x = (partialFact(allDrawn-typeDrawn, allDrawn) * partialFact(typeTotal - typeDrawn, typeTotal) * partialFact((allTotal - allDrawn) - (typeTotal - typeDrawn), allTotal - allDrawn)) / (partialFact(allTotal - typeTotal, allTotal) * fact(typeDrawn));
-            return x;
-        }
-
-        // given deck size, type count, draw size, and type quota, run drawType for every amount >= quota and sum results
-        // had to be altered to not attempt to draw more than exist in deck
+        // Given deck size, type count, draw size, and type quota, run drawType for every amount >= quota and sum results
         function drawTypeMin(allTotal, typeTotal, allDrawn, typeDrawn){
             let x = 0;
             for(let i = typeDrawn; i <= allDrawn && i <= typeTotal; i++){
@@ -394,9 +341,9 @@
             return x;
         }
 
-        // given deck size, 2 type counts, draw size, and 2 type quotas, find chance of meeting both quotas
-        // walks through all satisfactory amounts of first type, and uses drawTypeMin to see if second type will meet quota
-        // multiplies the two together to get the intersecting probability, and returns the sum
+        // Given deck size, 2 type counts, draw size, and 2 type quotas, find chance of meeting both quotas
+        // Walks through all satisfactory amounts of first type, and uses drawTypeMin to see if second type will meet quota
+        // Multiplies the two together to get the intersecting probability, and returns the sum
         // Since we already accounted for the number of type A being drawn, the second calculation is run with all type A removed from the deck
         function drawTwoTypeMin(allTotal, totalA, totalB, allDrawn, drawnA, drawnB){
             let x = 0;
@@ -406,29 +353,8 @@
             return x;
         }
 
-        // like drawTwoTypeMin, but for three. The principle is the same
-        function drawThreeTypeMin(allTotal, totalA, totalB, totalC, allDrawn, drawnA, drawnB, drawnC){
-            let x = 0;
-            for(let i = drawnA; i <= allDrawn && i <= totalA; i++){
-                x += drawType(allTotal, totalA, allDrawn, i)*drawTwoTypeMin(allTotal - totalA, totalB, totalC, allDrawn-i, drawnB, drawnC);
-            }
-            return x;
-        }
-        
-        // odds of drawing a card of a type by a certain turn, modified to use drawTypeMin
-        function drawby(T,N){
-            var textType = Node.textContent ? 'textContent' : 'innerText',
-                N = parseFloat(document.getElementById('N').value) || 0,
-                T = parseFloat(document.getElementById('T').value) || 0,
-                result = document.getElementById('result-text');
-            //let x=(1-(choose(99-N,7+T)/choose(99,7+T)));
-            let x = (drawTypeMin(deckSize, N, T+7, 1));
-            result[textType] = x.toLocaleString(undefined,{style: 'percent', minimumFractionDigits:1});
-        } 
-
-        // NEW FUNCTIONS
-        
-        // converts the color costs of a card into an int from 0-31 representing 5 boolean values 
+        // Converts the color costs of a card into an int from 0-31 representing 5 boolean values 
+        // white=1, blue=2, black=4, red=8, green=16
         function processCost(cost){
             return Math.sign(cost.w + cost.wu + cost.wb + cost.wr + cost.wg)
                  + 2 * Math.sign(cost.u + cost.wu + cost.ub + cost.ur + cost.ug)
@@ -437,12 +363,12 @@
                  + 16 * Math.sign(cost.g + cost.wg + cost.ug + cost.bg + cost.rg);
         }
 
-        // count the number of colors in a card's mana cost
+        // Count the number of colors in a card's mana cost
         function numColors(cost){
-            return Math.sign(cost.w) + Math.sign(cost.u) + Math.sign(cost.b) + Math.sign(cost.r) + Math.sign(cost.g)
+            return Math.sign(cost.w) + Math.sign(cost.u) + Math.sign(cost.b) + Math.sign(cost.r) + Math.sign(cost.g);
         }
 
-        // extract the colored pips from a color cost
+        // Extract the colored pips from a color cost
         function colorReqs(cost){
             return {
                 w: cost.w,
@@ -464,46 +390,11 @@
         }
 
         // Encode the color pips of a mana cost as an integer using prime factors
+        // Allows us to use the color pips of spells as a map key
         function pipsToNum(cost){
             return 2 ** cost.w * 3 ** cost.u * 5 ** cost.b * 7 ** cost.r * 11 ** cost.g
                 * 13 ** cost.wu * 17 ** cost.wb * 19 ** cost.wr * 23 ** cost.wg * 29 ** cost.ub
                 * 31 ** cost.ur * 37 ** cost.ug * 41 ** cost.br * 43 ** cost.bg * 47 ** cost.rg;
-        }
-
-        // Prime factorize an encoded cost to regain the pips
-        function numToPips(num){
-            if(num == 0){
-                console.log("Something has gone very wrong");
-                return 0;
-            }
-            let out = {
-                w: 0,
-                u: 0,
-                b: 0,
-                r: 0,
-                g: 0
-            };
-            while(num % 2 == 0){
-                out.w = out.w + 1;
-                num /= 2;
-            }
-            while(num % 3 == 0){
-                out.u = out.u + 1;
-                num /= 3;
-            }
-            while(num % 5 == 0){
-                out.b = out.b + 1;
-                num /= 5;
-            }
-            while(num % 7 == 0){
-                out.r = out.r + 1;
-                num /= 7;
-            }
-            while(num % 11 == 0){
-                out.g = out.g + 1;
-                num /= 11;
-            }
-            return out;
         }
 
         // Simplify the categories of lands to only be relevant to a given color cost
@@ -511,7 +402,7 @@
             let costCode = processCost(cost);
             let limitedLandTypes = new Array(32).fill(0);
             for(let i = 0; i < 32; i++){
-                limitedLandTypes[i&costCode] += myLandTypes[i]
+                limitedLandTypes[i&costCode] += myLandTypes[i];
             }
             return limitedLandTypes;
         }
@@ -519,7 +410,9 @@
         // Calculate how lands contribute sources of various color combinations
         function sourcesFromLands(myLandTypes){
             let sources = new Array(32).fill(0);
+            // Iterate through the 32 subsets of the 5 mana colors and find the number of sources for each
             for(let i = 0; i < 32; i++){
+                // Iterate through the 32 subsets of the 5 mana colors and add the number of sources of each to the total of the relevant color combination
                 for(let j = 0; j < 32; j++){
                     sources[i] += myLandTypes[j] * Math.sign(j & i); //limit the colors produced to the intersection between the colors needed and the actual production
                 }
@@ -527,6 +420,7 @@
             return sources;
         }
 
+        // This tool uses some approximations that represent certain sources as fractions of lands. This does not play well with our hypergeometric distributions
         // Take a land count and set of land categories that are not whole numbers, and convert them to a set of whole numbers
         // These whole numbers need to behave as closely as possible to how those fractional lands would have.
         // I am mainly trying to preserve the output on the color combination requirement array.
@@ -541,6 +435,7 @@
                 floorLandTypes[i] = Math.floor(myLandTypes[i]);
                 floorLandCount += floorLandTypes[i];
             }
+            // calculate error between output of rounded down lands and output of unrounded land totals.
             let benchmark = sourcesFromLands(myLandTypes);
             let floorSources = sourcesFromLands(floorLandTypes);
             let error = new Array(32).fill(0);
@@ -586,20 +481,11 @@
             return set1;
         }
 
-        // adds random noise to a manabase, then rounds it
-        // not currently in use
-        function testLandRounding(){
-            let myLandTypes = new Array(32).fill(0);
-            for(let i = 0; i < 32; i++){
-                myLandTypes[i] = landTypes[i] + Math.random();
-            }
-            roundLands(myLandTypes);
-        }
-
-        // given lands with conditions like tainted or verge lands, figure out how likely the condition is to be met with a given number of lands drawn in total
+        // Given lands with conditions like tainted or verge lands, figure out how likely the condition is to be met with a given number of lands drawn in total
         function condAdjust(drawn){
             let myLandTypes = landTypes.slice();
             let myLandCount = Math.round(sum(myLandTypes));
+            // iterate through list of conditional lands, compute the likelihood of the condition being met, and adjust mana source count accordingly
             for(let i = 0; i < condLands.length; i++){
                 let matches = typeSearch(condLands[i][2].replaceAll("a ","").replaceAll("an ","").split(" or "));
                 let odds = drawTypeMin(myLandCount - 1, matches, Math.max(0, drawn - 1), 1);
@@ -609,7 +495,7 @@
             return myLandTypes;
         }
 
-        // given a list of card types or subtypes, search the decklist to find how many match one or more of those types
+        // Given a list of card types or subtypes, search the decklist to find how many match one or more of those types
         function typeSearch(typeList){
             let numFound = 0;
             for(let i = 0; i < deckList.length; i++){
@@ -624,7 +510,7 @@
             return numFound;
         }
 
-        // for a given set of color pips in a mana cost, generate a cdf for when a manabase is able to afford those colors
+        // For a given set of color pips in a mana cost, generate a cdf for when a manabase is able to afford those colors
         function pipDist(cost){
             // override empty input fields with default values
             if(approxColors == undefined){
@@ -657,8 +543,8 @@
 
             return canCast;
         }
-        // calculate the distribution of # of lands in hand after the player mulligans.
-        // follows Frank Karsten's mulligan logic from his 2022 "How many sources?" article.
+        // Calculate the distribution of # of lands in hand after the player mulligans.
+        // Follows Frank Karsten's mulligan logic from his 2022 "How many sources?" article.
         function calcMullLands(){
             let openingDist = new Array(8);
             let mullDist = new Array(8);
@@ -743,7 +629,7 @@
             // only keep after 4
         }
 
-        // 
+        // Find the distribution of lands drawn by a given turn, factoring in mulligans
         function landsAtTurn(turn){
             let landDist = new Array(13).fill(0);
             for(let startLands = 0; startLands < 7; startLands++){
@@ -797,28 +683,6 @@
                 for(let j = 0; j < 32; j++){
                     comboReqs[j] -= Math.sign(j & i); //if the color output overlaps with the requirement, decrement the requirement
                 }
-                // this next bit was some code for an optimization I had in mind
-                // it did not work as planned but I would like to see if it could at some point in the future
-                /*for(let k = 1; k < 32; k *= 2){
-                    let satisfied = true;
-                    let colorSum = 0;
-                    for(let j = 0; j < 32; j++){
-                        if(Math.sign(j & k) > 0 && comboReqs[j] > comboReqs[j - k]){
-                            satisfied = false;  
-                        }
-                        colorSum += comboReqs[j] * Math.sign(j & k);
-                        //comboReqs[j] -= Math.sign(j & i); //if the color output overlaps with the requirement, decrement the requirement
-                    }
-                    if(satisfied && colorSum > 0){
-                        for(let j = 0; j < 32 && satisfied; j++){
-                            if(Math.sign(j & k) > 0){
-                                comboReqs[j] = 0;
-                                myLandTypes[j - k] += myLandTypes[j];
-                                myLandTypes[j] = 0;
-                            }
-                        }
-                    }
-                }*/
             }
             return success;
         }
@@ -832,6 +696,7 @@
                 // no ticks in range
                 return 0;
             }
+            // same as rLandTest except divides up space between max and min amongst branches
             if(Math.max(...comboReqs) <= 0){
                 return Math.floor(max) - Math.floor(min);
             } 
@@ -874,27 +739,8 @@
             return success;
         }
 
-        // see if a given set of lands can affors a given set of color pips
-        function landAfford(pickedLands, cost){
-            /*
-            Frank discussed that to determine if it will meet a requirement with two different colors,
-            A mana base needs to afford both of the individual color costs, as well as their combined value with any combination of the two colors
-            I presume this extends to every permutation for spells with more colors
-            */
-            let comboReqs = getComboReqs(cost);
-            for(let i = 0; i < 32; i++){
-                for(let j = 0; j < pickedLands.length && comboReqs[i] > 0; j++){
-                    comboReqs[i] -= Math.sign(i & pickedLands[j]); //if the color output overlaps with the requirement, decrement the requirement
-                }
-                if(comboReqs[i] > 0){
-                    return 0;
-                }
-            }
-            return 1;
-        }
-
         // Calculates the requirements for each combination of colors
-            // ex. a card costing {1}{U}{W} would require 1 blue source, 1 white source, and 2 sources that can produce either blue or white.
+        // ex. a card costing {1}{U}{W} would require 1 blue source, 1 white source, and 2 sources that can produce either blue or white.
         function getComboReqs(cost){
             let comboReqs = new Array(32).fill(0);
             comboReqs[1] = cost.w;
@@ -913,7 +759,7 @@
             return comboReqs;
         }
 
-        // using the stored pipdist dictionaries, get the distribution of how many lands are required to cast a spell
+        // Using the stored pipdist dictionaries, get the distribution of how many lands are required to cast a spell
         function landsToCast(cost, discount){
             let pipReqs = [];
             if(cost.t - discount == 1){
@@ -938,7 +784,8 @@
             return pipReqs;
         }
 
-        // encode a land's ability to produce each color as a boolean, stored in a 5-bit int
+        // Encode a land's ability to produce each color as a boolean, stored in a 5-bit int
+        // white=1, blue=2, black=4, red=8, green=16
         function findLandIndex(source){
             let landIndex = 0;
             if(source.w){
@@ -966,16 +813,13 @@
             for(let i = 0; i < cost.t - discount; i++){
                 canCast[i] = 0;
             }
+            // iterate through turns ranging from the first turn where it becomes possible to the last turn we consider
             for(let i = cost.t - discount; i <= 15; i++){
                 pCast = 0;
                 let landDist = landsAtTurn(i);
                 for(let lands = cost.t - discount; lands <= 12; lands++){
-                    //pCast += landReqs[lands] * drawType(99, landCount, i + 7, lands);
                     pCast += landReqs[lands] * landDist[lands];
-                    //pCast += drawType(99, landCount, i + 7, lands);
                 }
-                //pCast += landReqs[10] * drawTypeMin(99, landCount, i + 7, 10);
-                //pCast += drawTypeMin(99, landCount, i + 7, 10);
                 canCast[i] = pCast
             }
             let pdf = new Array(16);
@@ -987,6 +831,7 @@
             return pdf;
         }
 
+        // Function to calculate the mean of a pdf
         function mean(pdf){
             let avg = 0;
             for(let i = 0; i < pdf.length; i++){
@@ -995,8 +840,9 @@
             return avg;
         }
 
-        // pings the server with the user's decklist, unpacks and stores the result
+        
         function getColorCost(cost){
+            // 
             let cc = {
                 w: cost.split("{W}").length - 1,
                 u: cost.split("{U}").length - 1,
@@ -1026,15 +872,20 @@
             else if(cc.x > 2){
                 xValue = 1 // 3+ Xs X = 1
             }
+            // sum 
             cc.t = cc.w + cc.u + cc.b + cc.r + cc.g + cc.wu + cc.wb + cc.wr + cc.wg + cc.ub + cc.ur + cc.ug + cc.br + cc.bg + cc.rg + cc.c + (cc.x * xValue);
             return cc;
             
         }
 
+        // Approximates fetch lands by breaking them down into the lands they can fetch for
+        // 50% is treated as a land that can tap for whatever the fetch land can fetch for
+        // 50% is treated as a random distribution of the lands that can be fetched for
         function getFetchEquivalent(source){
             let myLandTypes = new Array(32).fill(0);
             let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
             let landIndex = findLandIndex(source) & deckColors;
+            // for fetches that get basic lands, just look at the colors
             if(source.fetch == "b"){
                 myLandTypes[landIndex] += 0.5;
                 let colors = Math.sign(landIndex & 1) + Math.sign(landIndex & 2) + Math.sign(landIndex & 4) + Math.sign(landIndex & 8) + Math.sign(landIndex & 16);
@@ -1054,8 +905,8 @@
                     myLandTypes[16] += 0.5 / colors;
                 }
             }
+            // for fetches that get nonbasic lands, pay attention to what fetchable duals and triomes we have
             else if(source.fetch == "nb"){
-                //myLandTypes[landIndex] += 0.5;
                 let colors = Math.sign(landIndex & 1) + Math.sign(landIndex & 2) + Math.sign(landIndex & 4) + Math.sign(landIndex & 8) + Math.sign(landIndex & 16);
                 let canFetch = new Array(32).fill(false);
                 let canFetch2 = new Array(32).fill(false);
@@ -1084,6 +935,7 @@
             return myLandTypes;
         }
         
+        // Pings the server with the user's decklist, unpacks and stores the result
         async function loadDict(){
             
             //remove previous error messages
@@ -1091,11 +943,13 @@
             let ignoreList = document.getElementById("ignore");
             ignoreList.value = "";
 
+            // sanitize input
             L = document.getElementById('decklist').value;
             let sanitizedL = L.replace("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "").replaceAll(/#.*\n/g, "\n").replaceAll("+", "PLUS");
             let splitL = sanitizedL.split("\n");
             let strippedL = "";
             let inSideboard = false;
+            // remove sideboard, add custom separator string
             for(let i = 0; i < splitL.length; i++){
                 if(splitL[i].toLowerCase().includes("sideboard")){
                     inSideboard = true
@@ -1108,6 +962,7 @@
                     inSideboard = false;
                 }
             }
+            // send request to server
             if(strippedL != lastDecklist){
                 console.log('loading');
                 var response = await fetch('https://api.salubrioussnail.com/?cards=' + strippedL);
@@ -1143,6 +998,7 @@
             commander1 = undefined;
             commander2 = undefined;
             commander3 = undefined;
+            // get commander names from input fields
             let commanderName1 = (document.getElementById('commander-name-1').value) || "nocard";
             let commanderName2 = document.getElementById('commander-name-2').value || "nocard";
             let commanderName3 = document.getElementById('commander-name-3').value || "nocard";
@@ -1153,9 +1009,10 @@
             condLands = [];
             condNames = [];
             
-            let uniqueCards = new Map();
-            // read in cards from decklist
+            let uniqueCards = new Map(); // for decklists with multiple printings of a card, combine them into a single listing
+            // read in cards from decklist, collect some preliminary information
             for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
+                // sanitize card names
                 if(cardList[c].includes(" (")){
                     cardList[c] = cardList[c].substring(0, cardList[c].indexOf(" ("));
                 }
@@ -1171,7 +1028,7 @@
                 let count = parseInt(name.substring(0,cut));
                 name = name.substring(cut+1).replaceAll("PLUS", "+");
                 let card = testDict[name];
-
+                // count up colors of deck
                 if(card.mana_cost){
                     white += card.mana_cost.split("{W}").length - 1;
                     blue += card.mana_cost.split("{U}").length - 1;
@@ -1179,10 +1036,9 @@
                     red += card.mana_cost.split("{R}").length - 1;
                     green += card.mana_cost.split("{G}").length - 1;
                 }
-
+                // note basic land types
                 if(card.card_type && card.card_type.includes("Land")){                
                     let landIndex = findLandIndex(card.mana_source);
-                    //landTypes[0] += count * (1-sourceMult);
                     if(card.card_type.includes("Plains")){
                         plainsTypes[landIndex] = true;
                     }
@@ -1202,7 +1058,8 @@
 
                 deckSize += count;
             }
-            if(commanderName3 != "nocard"){
+            // check to see if deck size lines up with common formats
+            if(commanderName3 != "nocard"){ // exclude companion from deck total, leave commanders in
                 deckSize--;
             }
             console.log("Deck size: " + deckSize + " cards");
@@ -1211,13 +1068,13 @@
                     + "- Make sure any commanders and companions are identified<br>"
                     + "- If you exported from Moxfield using \"Copy for MTGA\", it will remove any cards that aren't on Arena. Use \"Copy for MTGO\" instead");
             }
-            if(commanderName1 != "nocard"){
+            if(commanderName1 != "nocard"){ // remove commanders for the purposes of simulating draws
                 deckSize--;
             }
             if(commanderName2 != "nocard"){
                 deckSize--;
             }
-
+            // process cards in decklist
             for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
                 let name = cardList[c];
                 let cut = 0
@@ -1237,6 +1094,7 @@
                 else if(card == undefined){
                     addError("load-result-box", "Error: \"" + name + "\" came back as undefined");
                 }
+                // check to make sure entry isn't duplicate
                 else if(uniqueCards.has(name)){
                     deckList[uniqueCards.get(name)].count += count;
                     if(card.card_type.includes("Land")){
@@ -1251,6 +1109,7 @@
                     card.colorCost = colorCost;
                     let sourceMult = 1;
                     card.count = count;
+                    // check card name against common discounts
                     if(commonDiscounts[name]){
                         card.discount = commonDiscounts[name];
                         if(ignoreList.value){
@@ -1263,7 +1122,7 @@
                     }
                     card.ignore = false;
 
-                    // categorizing lands and incrementing category totals
+                    // checking card names against commander names
                     if(card.name.toLowerCase().includes(commanderName1.toLowerCase())){
                         if(commander1found > 0){
                             deckList.push(structuredClone(commander1));
@@ -1288,33 +1147,28 @@
                         console.log("commander 3: " + card.name);
                         commander3found += 1;
                     }
+                    // categorizing lands and incrementing category totals
                     else if(card.card_type.includes("Land")){
                         // handle fetches
                         let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
                         if(card.mana_source.fetch){
+                            // break fetch lands down into pieces of lands they fetch for and add those to their relevant catefories
                             let addLandTypes = getFetchEquivalent(card.mana_source);
-                            //console.log(card.name + ": " + addLandTypes[0] + " " + addLandTypes[1] + " " + addLandTypes[2] + " " + addLandTypes[4] + " " + addLandTypes[8] + " " + addLandTypes[16]);
-                            //console.log(addLandTypes);
                             for(let i = 0; i < 32; i++){
                                 landTypes[i] += addLandTypes[i] * count;
                             }
                             landCount += count;
                             deckList.push(card);
-                            /*if(deckColors >= 3){
-                                sourceMult = 0.67;
-                            }*/
                         }
                         else if(card.mana_source.choose){
                             // "choose a color" type mana sources (thriving, CLB gates)
-                            //console.log(name);
+                            // 50% any color, 50% split between all relevant pairs
                             let landIndex = findLandIndex(card.mana_source) & deckColors;
                             let chooseIndex = deckColors & (~landIndex);
                             let numColors = Math.sign(chooseIndex & 1) + Math.sign(chooseIndex & 2) + Math.sign(chooseIndex & 4) + Math.sign(chooseIndex & 8) + Math.sign(chooseIndex & 16);
                             landTypes[chooseIndex | landIndex] += 0.5;
-                            //console.log("0.50 " + (chooseIndex | landIndex));
                             for(let i = 1; i < 32; i *= 2){
                                 if(i & chooseIndex){
-                                    //console.log((1/(2*numColors)).toFixed(2) + " " + (i | landIndex));
                                     landTypes[i | landIndex] += 1/(2*numColors);
                                 }
                             }
@@ -1322,13 +1176,13 @@
                             deckList.push(card);
                         }
                         else{
+                            // normal lands
                             let landIndex = findLandIndex(card.mana_source) & deckColors;
                             landTypes[landIndex] += count * sourceMult;
-                            //console.log(card.name + ": " + landIndex);
-                            //landTypes[0] += count * (1-sourceMult);
                             landCount += count;
                             deckList.push(card);
                         }
+                        // note if land has conditions (i.e. verge lands)
                         if(card.mana_source.cond){
                             let index1 = findLandIndex(card.mana_source);
                             let index2 = findLandIndex(card.mana_source.cond.colors) | index1;
@@ -1344,9 +1198,11 @@
                 
             }
             console.log("lands: " + landCount);
+            // check errors with commander recognition
             if(commanderName1 != "nocard" && commander1found == 0){
                 addError("load-result-box", "Error: The name \"" + commanderName1 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
             }
+            // if multiple cards match with the commander, go back and check for exact matches, warn user if there aren't any
             if(commander1found > 1){
                 let exactMatch = (commander1.name.toLowerCase() == commanderName1.toLowerCase());
                 for(let i = 0; i < deckList.length && !exactMatch; i++){
@@ -1361,6 +1217,7 @@
                     addError("load-result-box", "Error: The name \"" + commanderName1 + "\" matched with multiple cards in your decklist. Try entering the card's full name");
                 }
             }
+            // repeat for partner
             if(commanderName2 != "nocard" && commander2found == 0){
                 addError("load-result-box", "Error: The name \"" + commanderName2 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
             }
@@ -1378,6 +1235,7 @@
                     addError("load-result-box", "Error: The name \"" + commanderName2 + "\" matched with multiple cards in your decklist. Try entering the card's full name");
                 }
             }
+            // repeat for companion
             if(commanderName3 != "nocard" && commander3found == 0){
                 addError("load-result-box", "Error: The name \"" + commanderName3 + "\" did not match with any of the cards in your decklist. Double check the spelling and capitalization and try again");
             }
@@ -1396,13 +1254,13 @@
                 }
             }
 
-            // turn on estimation config options for players with 4 or 5 color decks
+            // turn on estimation config options for players with 5 color decks
             deckColors = Math.sign(white) + Math.sign(blue) + Math.sign(black) + Math.sign(red) + Math.sign(green);
             if(deckColors >= 5){
                 let configOptions = document.getElementById("approx-config");
                 configOptions.hidden = false;
             }
-            // deck is loaded, unlock compute button
+            // deck is loaded, unlock compute buttons for other calculators
             let button = document.getElementById("color-compute-button");
             button.disabled = false;
             let error = button.parentElement;
@@ -1411,17 +1269,6 @@
             button.disabled = false;
             error = button.parentElement;
             error.replaceChildren(button);
-            /*let computeButton = document.getElementById("color-compute-button");
-            computeButton.disabled = false;
-            computeButton = document.getElementById("tap-compute-button");
-            computeButton.disabled = false;
-            let errors = document.getElementsByName("load-first");
-            for(let i = 0; i < errors.length; i++){
-                //errors[i].textContent = errors[i].textContent.replace("Use the Deck Loader to select a deck","");
-                let error = errors[i];
-                let button = paragraph.querySelector("#myChildElement");
-                for(butt)
-            }*/
             console.log('processed');
             let loadResult = document.getElementById("load-result");
             if(loadCount == 0){
@@ -1433,7 +1280,7 @@
             loadCount++;
         }
 
-        // on startup, disable the compute button until the user loads their deck
+        // On startup, disable the compute buttons until the user loads their deck
         function disableButton(){
             let computeButton = document.getElementById("color-compute-button");
             computeButton.disabled = true;
@@ -1441,7 +1288,7 @@
             computeButton.disabled = true;
         }
 
-        // for any error we want to display, print it to the output box
+        // For any error we want to display, print it to the output box
         function addError(resultBox, errorText){
             let error = document.createElement("div");
             error.innerHTML = errorText;
@@ -1449,6 +1296,7 @@
             document.getElementById(resultBox).appendChild(error);
         }
 
+        // Clear error text from a given result box
         function clearError(resultBox){
             let result = document.getElementById(resultBox);
             let i = 0;
@@ -1463,26 +1311,26 @@
             }
         }
 
-        // procedurally add rows to the analysis output table
-        // type: "th" for table header, "td" for table data
+        // Procedurally add rows to the analysis output table
+        // Type: "th" for table header, "td" for table data
         function tableRow(rowData, type, rowClass){
             let newRow = document.createElement("tr");
             for(let i = 0; i < rowData.length; i++){
                 let cell = document.createElement(type);
                 cell.innerText = rowData[i];
-                //if(i > 0 && type == "td"){
                 if(rowClass[i]){
                     cell.classList.add(rowClass[i]);
                 }
-                //}
                 newRow.appendChild(cell);
             }
             return newRow;
         }
 
+        // Find all spells with a given mana value, get the cast distribution for their color pips, and put it into a map
         function xDropDict(x){
             let dict = new Map();
             for(let i = 0; i < deckList.length; i++){
+                // run the numbers for cards with a relevant mana cost
                 if(deckList[i].colorCost.t - deckList[i].discount == x){
                     let pips = colorReqs(deckList[i].colorCost);
                     let pipCode = pipsToNum(pips);
@@ -1490,9 +1338,9 @@
                         iterations = 0;
                         castDistro = pipDist(pips);
                         dict.set(pipCode, castDistro.slice());
-                        //console.log(deckList[i].mana_cost + ": " + iterations);
                     }
                 }
+                // run the numbers for cards with a relevant cycling cost
                 else if(deckList[i].mana_source.cycling != false && getColorCost(deckList[i].mana_source.cycling.cost).t == x){
                     let pips = colorReqs(getColorCost(deckList[i].mana_source.cycling.cost));
                     let pipCode = pipsToNum(pips);
@@ -1500,24 +1348,27 @@
                         iterations = 0;
                         castDistro = pipDist(pips);
                         dict.set(pipCode, castDistro.slice());
-                        //console.log(deckList[i].mana_cost + ": " + iterations);
                     }
                 }
             }
             return dict;
         }
 
+        // Find all spells of a given mana value that act as a mana source or gain one through other means
         function scanForSources(x){
             for(let i = 0; i < deckList.length; i++){
+                // make sure mana value lines up
                 if(deckList[i].colorCost.t - deckList[i].discount == x){
                     let landIndex = findLandIndex(deckList[i].mana_source);
                     let typeMult = 1;
+                    // penalize more fragile permanent types
                     if(deckList[i].card_type.includes("Artifact")){
                         typeMult = 0.75;
                     }
                     if(deckList[i].card_type.includes("Creature")){
                         typeMult = 0.5;
                     }
+                    // handle fetches
                     if(deckList[i].mana_source.fetch){
                         let addLandTypes = getFetchEquivalent(deckList[i].mana_source);
                         for(let j = 0; j < 32; j++){
@@ -1525,33 +1376,28 @@
                         }
                         landCount += deckList[i].count * typeMult;
                     }
+                    // "choose a color" type mana sources (thriving, CLB gates)
                     else if(deckList[i].mana_source.choose){
-                        // "choose a color" type mana sources (thriving, CLB gates)
-                        //console.log(deckList[i].name);
                         let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
                         landIndex = findLandIndex(deckList[i].mana_source) & deckColors;
                         let chooseIndex = deckColors & (~landIndex);
                         let numColors = Math.sign(chooseIndex & 1) + Math.sign(chooseIndex & 2) + Math.sign(chooseIndex & 4) + Math.sign(chooseIndex & 8) + Math.sign(chooseIndex & 16);
                         landTypes[chooseIndex | landIndex] += 0.5 * typeMult;
-                        //console.log((0.5 * typeMult).toFixed(2) + " " + (chooseIndex | landIndex));
                         for(let j = 1; j < 32; j *= 2){
                             if(j & chooseIndex){
-                                //console.log((1/(2*numColors) * typeMult).toFixed(2) + " " + (j | landIndex));
                                 landTypes[j | landIndex] += 1/(2*numColors) * typeMult;
                             }
                         }
                         landCount += deckList[i].count * typeMult;
                     }
+                    // handle more typical sources
                     else if(landIndex != 0 || deckList[i].mana_source.amt > 0){
                         typeMult *= turnsToCast(deckList[i].colorCost, deckList[i].discount)[x];
                         landTypes[landIndex] += deckList[i].count * typeMult;
                         landCount += deckList[i].count * typeMult;
-                        //console.log("SOURCE: " + cardList[i]);
-                    }
-                    else{
-                        //console.log("NO SOURCE: " + cardList[i]);
                     }
                 }
+                // factor in landcycling
                 else if(deckList[i].mana_source.cycling != false && getColorCost(deckList[i].mana_source.cycling.cost).t == x){
                     if(deckList[i].mana_source.cycling.lands != false){
                         let typeMult = turnsToCast(getColorCost(deckList[i].mana_source.cycling.cost), 0)[x];
@@ -1565,6 +1411,7 @@
             }
         }
 
+        // for cards with a user-specified discount, rewrite their mana cost to reflect the discount
         function factorDiscount(colorCost, discount){
             let pips = colorCost.substring(1, colorCost.length-1).split("}{");
             let costOut = "";
@@ -1579,40 +1426,31 @@
             }
             return costOut;
         }
+
         // batching all those little functions up into one big "run the analysis" function
+        // short for Deep Analysis. Snail is aware of this abbreviation and thinks it is funny. I would not use it otherwise
         function deepAnal(individualResults){
             let textOut = "";
             manaDict = new Map();
+            // simulate mulligans to get a starting distribution of lands in the opening hand
             calcMullLands();
 
-            //console.log("lands: " + landCount);
-            /*console.log(landTypes.slice());
-            console.log(mullLands);
-            console.log(landsAtTurn(1));*/
-            
-            //calculate for one drops based on mana from lands
+            // calculate for one drops based on mana from lands
             oneDropDict = xDropDict(1);
 
-            //scan one drops for mana sources
+            // scan one drops for mana sources
             scanForSources(1);
-
-            //console.log("lands: " + landCount);
-            //console.log(landTypes.slice());
+            // reflect newly identified sources in post-mulligan distribution
             calcMullLands(landCount);
-            //console.log(mullLands);
-            //console.log(landsAtTurn(1));
 
-            //calculate for two drops based on mana from lands and one drops
+            // calculate for two drops based on mana from lands and one drops
             twoDropDict = xDropDict(2);
 
-            //scan two drops for mana sources
+            // scan two drops for mana sources
             scanForSources(2);
-
-            //console.log("lands: " + landCount);
-            //console.log(landTypes.slice());
             calcMullLands(landCount);
-            //console.log(mullLands);
 
+            // repeat for three and four drops
             threeDropDict = xDropDict(3);
             scanForSources(3);
             calcMullLands(landCount);
@@ -1630,9 +1468,9 @@
                     iterations = 0;
                     castDistro = pipDist(pips);
                     manaDict.set(pipCode, castDistro.slice());
-                    //console.log(deckList[i].mana_cost + ": " + iterations);
                 }
             }
+            // calculate for commanders
             if(commander1){
                 let pips = colorReqs(commander1.colorCost);
                 let pipCode = pipsToNum(pips);
@@ -1689,7 +1527,6 @@
                     iterations = 0;
                     castDistro = pipDist(pips);
                     manaDict.set(pipCode, castDistro.slice());
-                    //console.log(deckList[i].mana_cost + ": " + iterations);
                 }
             }
             if(commander3){
@@ -1719,7 +1556,6 @@
                     iterations = 0;
                     castDistro = pipDist(pips);
                     manaDict.set(pipCode, castDistro.slice());
-                    //console.log(deckList[i].mana_cost + ": " + iterations);
                 }
             }
             // now that all of the mana values are calculated for and added to the dictionary, add up all the relevant info and return it
@@ -1728,10 +1564,13 @@
             let totalCmcDelay = 0;
             let totalCmc = 0;
             let allCards = new Array();
+            // check how well deck can cast commanders
             if(commander1){
                 let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
+                // get the distribution to afford the commander's mana cost
                 let turnCastDist = turnsToCast(commander1.colorCost, commander1.discount);
                 let cmc = Math.min(commander1.colorCost.t - commander1.discount, 12);
+                // use it to calculate how often it's played on time, and how late it generally gets played
                 let onCurveRate = turnCastDist[cmc];
                 let avgDelay = mean(turnCastDist) - commander1.colorCost.t + commander1.discount;
                 cmcOnCurve += onCurveRate * cmc * weight;
@@ -1770,6 +1609,7 @@
                 }
                 allCards.push([commander3.name, onCurveRate, avgDelay]);
             }
+            // do the same for every other card in the deck
             for(let i = 0; i < deckList.length; i++){
                 if(!deckList[i].card_type.includes("Land") && !deckList[i].ignore){
                     let turnCastDist = turnsToCast(deckList[i].colorCost, deckList[i].discount);
@@ -1785,6 +1625,7 @@
                     }
                 }
             }
+            // compute averages
             cmcOnCurve /= totalCmc;
             totalCmcDelay /= totalCmc;
             console.log("curve rate: " + cmcOnCurve);
@@ -1795,18 +1636,22 @@
             return [cmcOnCurve, totalCmcDelay];
         }
 
+        // Change the manabase and run the analysis again to see how that changes the results.
         function testVariant(name, landDiff, baseRate, baseDelay){
+            // back up global variables and make specified changes 
             let landCountBackup = landCount;
             let landTypesBackup = landTypes.slice();
             for(let i = 0; i < 32; i++){
                 landCount += landDiff[i];
                 landTypes[i] += landDiff[i];
             }
+            // run the analysis and compare results
             let analResult = deepAnal();
             let newRate = analResult[0] - baseRate;
             let newDelay = analResult[1] - baseDelay;
             let rateText;
             let delayText;
+            // format them to output into tables
             if(newRate < 0){
                 rateText = (newRate * 100).toFixed(2) + "%";
             }
@@ -1821,27 +1666,9 @@
             }
             landCount = landCountBackup;
             landTypes = landTypesBackup.slice();
-            /*if(newRate >= 0.015){
-                rowClass[1] = "table-num-green";
-            } else if (newRate >= 0.0075){
-                rowClass[1] = "table-num-yellow";
-            } else if (newRate >= 0){
-                rowClass[1] = "table-num-orange";
-            } else {
-                rowClass[1] = "table-num-red";
-            }
-            if(newDelay <= -0.05){
-                rowClass[2] = "table-num-green";
-            } else if (newDelay <= -0.025){
-                rowClass[2] = "table-num-yellow";
-            } else if (newDelay <= 0){
-                rowClass[2] = "table-num-orange";
-            } else {
-                rowClass[2] = "table-num-red";
-            }*/
             return [name, rateText, delayText];
         }
-
+        // Reformat a set of manabase changes in terms of the change to each land category
         function createDiff(indices){
             let diff = new Array(32).fill(0);
             for(let i = 0; i < indices.length; i++){
@@ -1850,6 +1677,7 @@
             return diff;
         }
 
+        // Custom sort comparison for individual card table. Puts commanders at top, then sorts by highest average delay
         function cardCompare(a, b){
             if(commander1){
                 if(a[0] == commander1.name){
@@ -1885,47 +1713,34 @@
             
         }
 
+        // Truncate card names that are too long for the table
         function reduceName(name, maxLength){
             if(name.length > maxLength){
                 let newName = name;
-                /*if(newName.includes(", ")){
-                    newName = newName.substring(0, newName.indexOf(", "));
-                }
-                if(newName.includes(" of ")){
-                    newName = newName.substring(0, newName.indexOf(" of "));
-                }
-                if(newName.includes(" the ")){
-                    newName = newName.substring(0, newName.indexOf(" the "));
-                }
-                let matches = 0;
-                for(let i = 0; i < cardList.length; i++){
-                    if(cardList[i].includes(newName)){
-                        matches += 1;
+                while(newName.length > maxLength - 3){
+                    if(newName.includes(" ")){
+                        newName = newName.substring(0, newName.lastIndexOf(" "));
                     }
-                }*/
-                //if (matches != 1 || newName.length > maxLength - 3){
-                    while(newName.length > maxLength - 3){
-                        if(newName.includes(" ")){
-                            newName = newName.substring(0, newName.lastIndexOf(" "));
-                        }
-                        else{
-                            newName = newName.substring(0, maxLength - 3);
-                        }
+                    else{
+                        newName = newName.substring(0, maxLength - 3);
                     }
-                //}
+                }
                 newName = newName + "...";
                 return newName;
             }
             return name;
         }
+
+        // Remove curly braces from text representations of mana costs
         function reduceMana(mana){
             return mana.replaceAll("{W}","W").replaceAll("{U}","U").replaceAll("{B}","B").replaceAll("{R}","R").replaceAll("{G}","G")
                 .replace("{1}","1").replace("{2}","2").replace("{3}","3").replace("{4}","4").replace("{5}","5")
                 .replace("{6}","6").replace("{7}","7").replace("{8}","8").replace("{9}","9");
         }
 
+        // Create a table that can toggle between multiple tables using tabs
         function createTableTab(id, parent, buttonContents, tableContents){
-
+            // remove existing table and create our own
             let outerDiv = document.getElementById(id);
             if(outerDiv != null){
                 outerDiv.remove();
@@ -1935,7 +1750,7 @@
 
             let buttonDiv = document.createElement("div");
             buttonDiv.classList.add("tab");
-
+            // set up buttons for each tab
             for(let i = 0; i < buttonContents.length; i++){
                 let newButton = document.createElement("button");
                 newButton.innerText=buttonContents[i];
@@ -1947,7 +1762,7 @@
             }
 
             outerDiv.appendChild(buttonDiv);
-
+            // set up tables and link them to buttons
             for(let i = 0; i < tableContents.length; i++){
                 let newTable = tableContents[i];
                 newTable.id = id+"-table-"+i;
@@ -1956,15 +1771,18 @@
                 newTable.classList.add(id+"-table");
                 outerDiv.appendChild(newTable);
             }
-
+            // insert into document, show first table
             document.getElementById(parent).appendChild(outerDiv);
             switchTableTab(id + "-button-0");
         }
 
+        // When tab is clicked, switch to corresponding table
         function switchTableTab(buttonId){
+            // find corresponding table and button
             let id = buttonId.substring(0,buttonId.indexOf("-button-"));
             let tabNum = buttonId.substring(buttonId.lastIndexOf("-")+1);
             let tables = document.getElementsByClassName(id + "-table");
+            // clear existing table
             for(let i = 0; i < tables.length; i++){
                 tables[i].style.display = "none";
             }
@@ -1973,26 +1791,12 @@
             for (i = 0; i < tablinks.length; i++) {
                 tablinks[i].className = tablinks[i].className.replace(" active", "");
             }
-
+            // show new table
             document.getElementById(id+"-table-"+tabNum).style.display = "table";
             document.getElementById(buttonId).className += " active";
         }
-        
-        function describeDelayImprovement(color, improvement){
-            if(improvement){
-                if(improvement < 0.02){
-                    return ",<br><strong>" + color + "</strong> mana sources are <strong>not a problem</strong>";
-                } else if(improvement < 0.04){
-                    return ",<br><strong>" + color + "</strong> mana sources are a <strong>slight</strong> problem";
-                } else if(improvement < 0.06){
-                    return ",<br><strong>" + color + "</strong> mana sources are a <strong>significant</strong> problem";
-                } else{
-                    return ",<br><strong>" + color + "</strong> mana sources are a <strong>critical</strong> problem";
-                }
-            }
-            return "";
-        }
-        // this is the one tied to the compute button
+
+        // This is the one tied to the compute button on the color calculator
         function colorTest(){
             // grab input from calculator
             var textType = Node.textContent ? 'textContent' : 'innerText',
@@ -2004,6 +1808,7 @@
             let landCountBackup = landCount;
             let landTypesBackup = landTypes.slice();
 
+            // track improvements from adding a wastes or a basic
             let genericBoost;
             let whiteBoost;
             let blueBoost;
@@ -2013,6 +1818,7 @@
 
             let startTime = Date.now();
             let ignoreListContents = document.getElementById('ignore').value.split('\n');
+            let ignored = false;
             // reset discount and ignore status
             for(let i = 0; i < deckList.length; i++){
                 deckList[i].discount = 0;
@@ -2034,23 +1840,25 @@
             // iterate through list of ignored cards
             for(let i = 0; i < ignoreListContents.length; i++){
                 let listItem = ignoreListContents[i];
-                //console.log(listItem);
                 let cardName = "";
                 let ignore = false;
                 let discount = 0;
+                // check for ignored cards
                 if(listItem.charAt(0) == '-'){
                     cardName = listItem.substring(1);
                     while(cardName.charAt(0) == " "){
                         cardName = cardName.substring(1);
                     }
                     ignore = true;
+                    ignored = true;
                 }
+                // check for discounted cards
                 else if(listItem.includes(" ")){
                     cardName = listItem.substring(listItem.indexOf(" ") + 1);
                     discount = parseInt(listItem.substring(0, listItem.indexOf(" ")));
-                    //ignoreCards.push([cardName, discount]);
                 }
                 if(cardName != ""){
+                    // go through decklist to ignore cards and apply discounts
                     for(let j = 0; j < deckList.length; j++){
                         if(deckList[j].name.toLowerCase().includes(cardName.toLowerCase())){
                             console.log(cardName);
@@ -2062,8 +1870,10 @@
                                 deckList[j].discount = deckList[j].colorCost.t;
                                 addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
                             }
+                            ignored = true;
                         }
                     }
+                    // repeat for commanders
                     if(commander1 && commander1.name.toLowerCase().includes(cardName.toLowerCase())){
                         console.log(cardName);
                         commander1.ignore = ignore;
@@ -2074,6 +1884,7 @@
                             commander1.discount = commander1.colorCost.t;
                             addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
                         }
+                        ignored = true;
                     }
                     if(commander2 && commander2.name.toLowerCase().includes(cardName.toLowerCase())){
                         console.log(cardName);
@@ -2085,6 +1896,7 @@
                             commander2.discount = commander2.colorCost.t;
                             addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
                         }
+                        ignored = true;
                     }
                     if(commander3 && commander3.name.toLowerCase().includes(cardName.toLowerCase())){
                         console.log(cardName);
@@ -2096,13 +1908,21 @@
                             commander3.discount = commander3.colorCost.t;
                             addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
                         }
+                        ignored = true;
                     }
                 }
             }
-
+            
+            // reflect discount status onto stored card data for future loads
             for(let i = 0; i < deckList.length; i++){
                 testDict[deckList[i].name].ignore = deckList[i].ignore;
                 testDict[deckList[i].name].discount = deckList[i].discount;
+            }
+
+            if(ignored){
+                let ignoreList = document.getElementById("ignore-list");
+                ignoreList.hidden = false;
+                console.log("showing ignore list");
             }
 
             //remove previous errors
@@ -2123,6 +1943,7 @@
             let baseDelay = analResult[1];
             let allCards = analResult[2];
             let rowClass = ["", "", ""];
+            // color code first table
             if(baseRate >= 0.87){
                 rowClass[1] = "table-num-green";
             } else if (baseRate >= 0.8){
@@ -2143,15 +1964,16 @@
             }
             table.appendChild(tableRow(["Current Manabase", (baseRate * 100).toFixed(1) + "%", baseDelay.toFixed(3)], "td", rowClass));
 
+            // check to make sure repeated analyses won't run too long and freeze
             let endTime = Date.now();
             if(endTime - startTime > 1500){
                 console.log(`Execution time: ${endTime - startTime} ms`);
-                //result[textType] = result[textType] + "\nLand impact analysis cancelled, predicted runtime too high";
                 document.getElementById("color-analyzer-result-box").appendChild(table);
                 addError("color-analyzer-result-box", "Error: Land impact analysis cancelled, predicted runtime too high");
                 return;
             }
 
+            // remove old individual cards table, add new one
             let cardTable = document.getElementById("color-card-table");
             if(cardTable != null){
                 cardTable.remove();
@@ -2160,8 +1982,10 @@
             cardTable.id = "color-card-table";
             cardTable.appendChild(tableRow(["Card Name", "Cost", "Cast Rate", "Avg. Delay"], "th", ["","","",""]));
 
+            // sort with custom comparison, prioritize commanders then high delay cards
             allCards = allCards.sort(cardCompare);
 
+            // add cards to individual card table and color code
             for(let i = 0; i < Math.min(allCards.length, 10); i++){
                 rowClass = ["", "", "", ""];
                 if(allCards[i][1] >= 0.85){
@@ -2246,7 +2070,6 @@
                 }
                 table.appendChild(tableRow(forestVariant, "td", ["", "table-num", "table-num"]));
             }
-            //document.getElementById("color-analyzer-result-box").appendChild(table);
 
             // create table for tainted and verge lands if needed
             landCount = landCountBackup;
@@ -2308,6 +2131,7 @@
             if(result != null){
                 result.remove();
             }
+            // add text to summarize analysis results
             result = document.createElement("text");
             result.id = "color-analyzer-result";
             result.classList.add("result-text");
@@ -2329,25 +2153,8 @@
                 + Math.round(100 * (1-Math.max(genericBoost,0) / maxBoost)) + "%</strong> is due to your mana colors.<br>";
             descriptionText += "Your weakest color is <strong>" + maxColor + "</strong>.<br>";
             descriptionText += "Adding an extra " + maxLand + " would eliminate <strong>" + Math.round(100 * maxBoost / baseDelay) + "%</strong> of this delay.";
-            /*if(genericBoost < 0.02){
-                descriptionText += "<strong>land count</strong> is <strong>not a problem</strong>";
-            } else if(genericBoost < 0.04){
-                descriptionText += "<strong>land count</strong> is a <strong>slight</strong> problem";
-            } else if(genericBoost < 0.06){
-                descriptionText += "<strong>land count</strong> is a <strong>significant</strong> problem";
-            } else{
-                descriptionText += "<strong>land count</strong> is a <strong>critical</strong> problem";
-            }
-            
-            descriptionText += describeDelayImprovement("white", whiteBoost)
-                 + describeDelayImprovement("blue", blueBoost)
-                 + describeDelayImprovement("black", blackBoost)
-                 + describeDelayImprovement("red", redBoost)
-                 + describeDelayImprovement("green", greenBoost);*/
             result.innerHTML = descriptionText;
             document.getElementById("color-analyzer-result-box").appendChild(result);
-
-            //document.getElementById("tap-analyzer-result-box").appendChild(table);
 
             endTime = Date.now();
             console.log(`Execution time: ${endTime - startTime} ms`);
@@ -2355,22 +2162,25 @@
             console.log(landTypes);
         }
 
+        // Add an array times a scalar to another array
         function addScaledArr(arr1, arr2, scale){
             for(let i = 0; i < arr1.length; i++){
                 arr1[i] += arr2[i] * scale;
             }
         }
 
+        // Find out how long it takes to run out of lands to play
         function lastLand(turns){
             lastLandTurn = new Array(turns+8).fill(0);
+            // iterate through the different number of lands in hand after mulligan and their probability
             for(let i = 1; i < mullLands.length; i++){
                 addScaledArr(lastLandTurn, rLastLand(i, deckSize-7, landCount - i, 0, turns), mullLands[i]);
             }
             console.log(lastLandTurn);
             console.log(sum(lastLandTurn));
-
         }
 
+        // Based on a number of lands in opening hand, find the distribution of missed land drops
         function rLastLand(spares, numCards, numLands, turn, max){
             let out = new Array(max+8).fill(0);
             if(spares == 0){
@@ -2387,12 +2197,7 @@
         }
 
         // LAND CYCLE FUNCTIONS
-        // these all need to be filled in with the calculations necessary for their relevant cycle of lands
-        // a few things to keep in mind while working on these:
-        // - if you are looking for the number of lands at a given turn, make sure to start with the turn 0 mulligan distribution. You may need to call calcMullLands() at the beginning of tapTest()
-        // - lands can start in the opening hand or be drawn later into the game. Make sure to account for both
-        // - these should ideally be able to work considering any number of turns after the start of the game. Let's call this n
-
+        // Calculate how often a fast land enters tapped
         function pTapFast(turns){
             // Enters untapped if you control 2 or fewer other lands
             // If it's drawn before turn 4 (p = 10/n+7), it's untapped
@@ -2426,6 +2231,7 @@
             return tapped / avgLands;
         }
 
+        // Calculate how often a slow land enters tapped
         function pTapSlow(turns){
             if(turns < 3){
                 return 1;
@@ -2472,6 +2278,7 @@
             return tapped / avgLands;
         }
 
+        // Calculate how often a check land enters tapped
         function pTapCheck(types, turns){
             if(turns < 2){
                 return 1;
@@ -2485,17 +2292,23 @@
             // - combine that with the probabilities of one of the accepted land types being among the other lands
             // NOTE: for these lands, the array of accepted types is stored in source.fastInfo
             // most of it includes the exact types that will appear on cards' type lines, but there are a few that just say "legendary creature", and one that just says "legendary green creature"
+            
+            // see how many cards in deck are of a type we want
             let relevantCards = typeSearch(types);
+            // distinguish between lands and nonland cards
             let typesPlusLand = types.slice();
             typesPlusLand.push("Land");
             let landOverlap = typeSearch(typesPlusLand);
             let relevantNL = landOverlap - landCount;
             let relevantLands = relevantCards - relevantNL;
             let tapped = 0;
+            // no relevant cards
             if(relevantLands == 0 && relevantNL == 0){
                 return 1;
             }
+            // relevant cards are all lands
             if(relevantLands > 0 && relevantNL == 0){
+                // based on the distribution of lands played before missing a drop, see if any of the desired cards are among those lands
                 for(let i = 0; i < lastLandTurn.length; i++){
                     let pTap = (1-drawTypeMin(landCount - 1, relevantLands, i-1, 1)) * i;
                     for(let j = 1; j <= turns-i; j++){
@@ -2504,13 +2317,16 @@
                     tapped += pTap * lastLandTurn[i];
                 }
             }
+            // relevant cards are all nonlands
             else if(relevantLands == 0 && relevantNL > 0){
+                // we will miss a land drop once we draw 7 nonland cards (naively assuming no other card draw)
                 tapped = (1 - drawTypeMin(deckSize-landCount, relevantNL, 7, 1));
             }
+            // relevant cards are all nonlands
             else if(relevantLands > 0 && relevantNL > 0){
                 addError("tap-analyzer-result-box", "You appear to be using check lands in a way we didn't know was possible. Go bother @rudeavocado in the Salubrious Snail discord server so he can add it to this tool");
             }
-
+            // divide by the average number of lands encountered in this case to get the average.
             let totalLandDist = landsAtTurn(turns);
             let avgLands = 0;
             for(let i = 0; i < totalLandDist.length; i++){
@@ -2519,6 +2335,7 @@
             return tapped / avgLands;
         }
 
+        // Calculate how often a tango land enters tapped
         function pTapTango(turns){
             if(turns < 3){
                 return 1;
@@ -2543,6 +2360,7 @@
             return tapped / avgLands;
         }
 
+        // Calculate how often the monocolored throne of eldraine "three or more" lands enter untapped
         function pTapWilds(types, turns){
             if(turns < 3){
                 return 1;
@@ -2567,10 +2385,10 @@
             return tapped / avgLands;
         }
 
+        // Calculate how often a reveal land enters tapped
         function pTapReveal(types, turns){
             // For the lands that want you to reveal a card of a certain subtype to enter untapped
-            // this would work like pTapCheck, but there's now the possibility of playing the card before you draw the land and then everything's all fucked up
-            // good luck lmao
+            //  like pTapCheck, but there's now the possibility of playing the card before you draw the land
             let relevantCards = typeSearch(types);
             let typesPlusLand = types.slice();
             typesPlusLand.push("Land");
@@ -2608,6 +2426,7 @@
             }
         }
 
+        // Calculate how often a land enters tapped
         function pTap(source, turns){
             if(source.fast == true){
                 return 0;
@@ -2646,6 +2465,7 @@
             }
         }
 
+        // total up spells and ramp pieces at each mana value, feed them into curve-out simulation
         function findCurveDensity(tapTotal, turns){
             let nonland = 0;
             let curve = new Array(13).fill(0);
@@ -2673,13 +2493,7 @@
                 }
             }
             curve.length = maxMana + 1;
-            //console.log(curve);
             calcMullLands();
-            /*let value = 0;
-            for(let i = 1; i <= turns; i++){
-                value += drawTypeMin(99, curve[i], 7+i, 1);
-            }
-            console.log(value / turns);*/
             let start = Date.now();
             let value = tapTestWrapper(tapTotal, curve, ramp, nonland, turns, 10000);
             console.log("Elapsed time: " + (Date.now()-start) + "ms");
@@ -2694,7 +2508,6 @@
             let deckLands = [tapTotal, landCount - tapTotal];
             let myMullLands = landsAtTurn(1); // post-mulligan land distribution plus first draw
             iterations = 0;
-            tapAnalDict = new Map();
             let min = 0;
             // iterate through each number of lands that can be drawn
             for(let i = 0; i <= 6; i++){
@@ -2709,16 +2522,12 @@
             return value / span;
         }
 
-        // given a deck's curve, number of lands, number of tap lands, and the contents of the current hand, calculate how much mana worth of spells the deck will be able to cast within a certain number of turns
+        // Given a deck's curve, number of lands, number of tap lands, and the contents of the current hand, calculate how much mana worth of spells the deck will be able to cast within a certain number of turns
         // This explores all the possible options and adds them together based on their relative probabilities
-        // in order to save computation, this uses a "wildcard" system for cards that are too expensive to cast, treating them as a single category when drawing cards
-        // when more mana becomes available, it uses drawType() to determine how many of the wildcards it can now afford.
+        // In order to save computation, this uses a "wildcard" system for cards that are too expensive to cast, treating them as a single category when drawing cards
+        // When more mana becomes available, it uses drawType() to determine how many of the wildcards it can now afford.
+        // There is some commented out code to narrate a few of its simulated curve-outs to the console. I'd normally delete, but in this case it's very useful for verifying the simulation when I'm expanding upon it
         function rTapTest(landsDown, handLands, handCurve, handRamp, deckLands, deckNL, deckCurve, deckRamp, deckRemaining, wildcards, wildPicks, turnsRemaining, min, max){
-            /*let inputToKey = [landsDown, handLands, handCurve, deckLands, deckNL, deckCurve, deckRemaining, wildcards, wildPicks, turnsRemaining].toString();
-            if(tapAnalDict.has(inputToKey)){
-                return tapAnalDict.get(inputToKey);
-            }
-            else{*/
             let span = max - min;
             if(Math.floor(max) == Math.floor(min)){
                 return 0;
@@ -2736,6 +2545,7 @@
                 if(handCurve[cmc] == undefined){
                     // branch based on number of cards of a given cmc drawn
                     let value = 0;
+                    // check how many commanders we gain access to
                     let commanders = 0;
                     if(commander1 != undefined && commander1.colorCost.t == cmc){
                         commanders += 1;
@@ -2747,15 +2557,15 @@
                         commanders += 1;
                     }
                     let newMin = min;
-                    //let newMax = min + span;
+                    // figure out how many wildcards we draw of the relevant cmc
                     for(let i = Math.max(0, deckCurve[cmc] - wildPicks); i <= wildcards && i <= deckCurve[cmc]; i++){
                         let newDeckCurve = deckCurve.slice();
                         newDeckCurve[cmc] -= i;
                         let newHandCurve = handCurve.slice();
                         newHandCurve[cmc] = commanders + i;
-                        //let newMax = newMin + span * drawType(wildPicks + wildcards, deckCurve[cmc], wildcards, i);
                         let sum = 0;
                         let values = new Array(i+1).fill(0);
+                        // figure out how many of those wildcards are ramp pieces
                         for(let j = Math.max(0, i + deckRamp[cmc] - deckCurve[cmc]); j <= i && j <= deckRamp[cmc]; j++){
                             let newDeckRamp = deckRamp.slice();
                             newDeckRamp[cmc] -= j;
@@ -2773,14 +2583,6 @@
                                 wildcards - i, wildPicks - newDeckCurve[cmc], turnsRemaining, newMin, newMax);
                             newMin = newMax;
                         }
-                        if(Math.abs(sum - 1) > 0.000000001){
-                            console.log("non-1 sum")
-                        }
-                        //newMin = newMax;
-                        //value += (turnsRemaining + 1) * drawType(wildPicks, deckCurve[mana], wildcards, i);
-                    }
-                    if(Math.abs(newMin - max) > 0.001 * span){
-                        console.log("Something has gone wrong");
                     }
                     return value;
                 }
@@ -2916,24 +2718,29 @@
             //}
         }
 
+        // This is the function tied to the compute button for the tap calculator
+        // 
         function tapTest(){
             var textType = Node.textContent ? 'textContent' : 'innerText',
                 result = document.getElementById('tap-analyzer-result'),
                 turns = parseFloat(document.getElementById('tap-turns').value) || 5;
             
-            //remove previous errors
+            // remove previous errors
             clearError("tap-analyzer-result-box");
             
             let tapTotal = 0;
             let untapTotal = 0;
             let landCount = 0;
+            // count up lands
             for(let i = 0; i < deckList.length; i++){
                 if(deckList[i].card_type.includes("Land")){
                     landCount += deckList[i].count;
                 }
             }
+            // calculate relevant distributions based on land count
             calcMullLands();
             lastLand(turns);
+            // remove old table, add new one
             let table = document.getElementById("tap-test-table")
             if(table != null){
                 table.remove();
@@ -2941,11 +2748,13 @@
             table = document.createElement("table");
             table.id = "tap-test-table";
             table.appendChild(tableRow(["Land", "Tap Chance"], "th", ["",""]));
+            // iterate through lands adding up tap status
             for(let i = 0; i < deckList.length; i++){
                 if(deckList[i].card_type.includes("Land")){
                     let tap = pTap(deckList[i].mana_source, turns);
                     tapTotal += deckList[i].count * tap;
                     untapTotal += deckList[i].count * (1 - tap);
+                    // add sometimes-tapped lands to table and color code
                     if(tap > 0 && tap < 1){
                         let rowClass = ["", ""];
                         if(tap <= 0.15){
@@ -2961,6 +2770,7 @@
                     }
                 }
             }
+            // run curve-out simulation on variants with no tap lands and one less, compare results
             let actualPerformance = findCurveDensity(Math.round(tapTotal), turns);
             console.log(actualPerformance);
             let oneLessTapPerformance = findCurveDensity(Math.max(Math.round(tapTotal - 1), 0), turns);
@@ -2977,7 +2787,7 @@
                 "%</strong> less effective <br>This would be a <strong>" + ((1 - (oneLessTapPerformance / allUntappedPerformance)) * 100).toFixed(1) + "%</strong> reduction if you replaced a tap land with an untapped land";
             document.getElementById("tap-analyzer-result-box").appendChild(table);
         }
-
+        // Reveal ignore list with button press
         function toggleIgnore(){
             let ignoreList = document.getElementById("ignore-list");
             ignoreList.hidden = !ignoreList.hidden;
