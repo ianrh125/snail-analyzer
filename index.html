@@ -1611,7 +1611,7 @@
             }
             // do the same for every other card in the deck
             for(let i = 0; i < deckList.length; i++){
-                if(!deckList[i].card_type.includes("Land") && !deckList[i].ignore){
+                if((!deckList[i].card_type.includes("Land") || (deckList[i].card_type.includes("//") && !(deckList[i].card_type == "Land // Land"))) && !deckList[i].ignore){
                     let turnCastDist = turnsToCast(deckList[i].colorCost, deckList[i].discount);
                     let cmc = Math.min(deckList[i].colorCost.t - deckList[i].discount, 12);
                     let onCurveRate = turnCastDist[cmc];
