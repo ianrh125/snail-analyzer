@@ -327,7 +327,7 @@
 
         // Implementation of a hypergeometric PMF
         // Given deck size, type count, draw size, and quota, calculates the chance of drawing exactly the quota of that type
-        function drawType(allTotal, typeTotal, allDrawn, typeDrawn){
+        function drawType(allTotal, typeTotal, allDrawn, typeDrawn){           
             let x = quickChoose(allTotal-typeTotal, allDrawn-typeDrawn)*quickChoose(typeTotal, typeDrawn)/quickChoose(allTotal, allDrawn);
             return x;
         }
@@ -546,13 +546,14 @@
         // Calculate the distribution of # of lands in hand after the player mulligans.
         // Follows Frank Karsten's mulligan logic from his 2022 "How many sources?" article.
         function calcMullLands(){
+            let myLandCount = Math.round(sum(landTypes));
             let openingDist = new Array(8);
             let mullDist = new Array(8);
             mullLands = new Array(8).fill(0);
             let mullAmount = 0;
             // distribution for a random hand
             for(let i = 0; i <= 7; i++){
-                openingDist[i] = drawType(deckSize, landCount, 7, i);
+                openingDist[i] = drawType(deckSize, myLandCount, 7, i);
                 mullDist[i] = openingDist[i];
             }
 
@@ -631,10 +632,11 @@
 
         // Find the distribution of lands drawn by a given turn, factoring in mulligans
         function landsAtTurn(turn){
+            let myLandCount = Math.round(sum(landTypes));
             let landDist = new Array(13).fill(0);
             for(let startLands = 0; startLands < 7; startLands++){
                 for(let drawnLands = 0; drawnLands <= turn; drawnLands++){
-                    landDist[Math.min(startLands + drawnLands, 12)] += mullLands[startLands] * drawType(deckSize-7, landCount - startLands, turn, drawnLands);
+                    landDist[Math.min(startLands + drawnLands, 12)] += mullLands[startLands] * drawType(deckSize-7, myLandCount - startLands, turn, drawnLands);
                 }
             }
             return landDist;
@@ -815,7 +817,7 @@
             }
             // iterate through turns ranging from the first turn where it becomes possible to the last turn we consider
             for(let i = cost.t - discount; i <= 15; i++){
-                pCast = 0;
+                let pCast = 0;
                 let landDist = landsAtTurn(i);
                 for(let lands = cost.t - discount; lands <= 12; lands++){
                     pCast += landReqs[lands] * landDist[lands];
@@ -1441,23 +1443,23 @@
             // scan one drops for mana sources
             scanForSources(1);
             // reflect newly identified sources in post-mulligan distribution
-            calcMullLands(landCount);
+            calcMullLands();
 
             // calculate for two drops based on mana from lands and one drops
             twoDropDict = xDropDict(2);
 
             // scan two drops for mana sources
             scanForSources(2);
-            calcMullLands(landCount);
+            calcMullLands();
 
             // repeat for three and four drops
             threeDropDict = xDropDict(3);
             scanForSources(3);
-            calcMullLands(landCount);
+            calcMullLands();
 
             fourDropDict = xDropDict(4);
             scanForSources(4);
-            calcMullLands(landCount);
+            calcMullLands();
             
             // calculate for 4 and above based on lands, 1, 2, and 3
             for(let i = 0; i < deckList.length; i++){
