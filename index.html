@@ -484,7 +484,7 @@
         // Given lands with conditions like tainted or verge lands, figure out how likely the condition is to be met with a given number of lands drawn in total
         function condAdjust(drawn){
             let myLandTypes = landTypes.slice();
-            let myLandCount = Math.round(sum(myLandTypes));
+            let myLandCount = Math.round(landCount);
             // iterate through list of conditional lands, compute the likelihood of the condition being met, and adjust mana source count accordingly
             for(let i = 0; i < condLands.length; i++){
                 let matches = typeSearch(condLands[i][2].replaceAll("a ","").replaceAll("an ","").split(" or "));
@@ -546,7 +546,7 @@
         // Calculate the distribution of # of lands in hand after the player mulligans.
         // Follows Frank Karsten's mulligan logic from his 2022 "How many sources?" article.
         function calcMullLands(){
-            let myLandCount = Math.round(sum(landTypes));
+            let myLandCount = Math.round(landCount);
             let openingDist = new Array(8);
             let mullDist = new Array(8);
             mullLands = new Array(8).fill(0);
@@ -632,7 +632,7 @@
 
         // Find the distribution of lands drawn by a given turn, factoring in mulligans
         function landsAtTurn(turn){
-            let myLandCount = Math.round(sum(landTypes));
+            let myLandCount = Math.round(landCount);
             let landDist = new Array(13).fill(0);
             for(let startLands = 0; startLands < 7; startLands++){
                 for(let drawnLands = 0; drawnLands <= turn; drawnLands++){
@@ -1197,7 +1197,7 @@
                         deckList.push(card);
                     }
                 }
-                
+
             }
             console.log("lands: " + landCount);
             // check errors with commander recognition
