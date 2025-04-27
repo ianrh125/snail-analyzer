@@ -1972,6 +1972,8 @@
                 console.log(`Execution time: ${endTime - startTime} ms`);
                 document.getElementById("color-analyzer-result-box").appendChild(table);
                 addError("color-analyzer-result-box", "Error: Land impact analysis cancelled, predicted runtime too high");
+                landCount = landCountBackup;
+                landTypes = landTypesBackup;
                 return;
             }
 
