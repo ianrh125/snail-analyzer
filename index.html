@@ -430,10 +430,14 @@
             let roundLandCount = Math.round(myLandCount);
             let floorLandTypes = new Array(32).fill(0);
             let floorLandCount = 0;
+            let landsToRound = 0;
             // start with all lands rounded down, note how many to round back up.
             for(let i = 0; i < 32; i++){
                 floorLandTypes[i] = Math.floor(myLandTypes[i]);
                 floorLandCount += floorLandTypes[i];
+                if(floorLandTypes[i] < myLandTypes[i]){
+                    landsToRound += 1;
+                }
             }
             // calculate error between output of rounded down lands and output of unrounded land totals.
             let benchmark = sourcesFromLands(myLandTypes);
@@ -443,7 +447,7 @@
                 error[i] = floorSources[i] - benchmark[i];
             }
 
-            let result = roundSearch(floorLandTypes.slice(), myLandTypes, roundLandCount - floorLandCount, 0, error);
+            let result = roundSearch(floorLandTypes.slice(), myLandTypes, roundLandCount - floorLandCount, 31, error, landsToRound);
             let searchLandTypes = result[0];
             let reportedError = result[1];
 
@@ -453,12 +457,12 @@
         // The search function for roundLands
         // It goes through the lands, and for any that are not already a whole number, it branches and searches best solutions with it rounded up and rounded down
         // Recursively calls itself for each branch to find the best combination of rounding for the remaining unrounded numbers.
-        function roundSearch(myRoundLands, myLandTypes, landsToAdd, i, error){
+        function roundSearch(myRoundLands, myLandTypes, landsToAdd, i, error, landsToRound){
             // searches for next unrounded value
-            while(myLandTypes[i] <= myRoundLands[i] && i < 31){
-                i++;
+            while(myLandTypes[i] <= myRoundLands[i] && i >= 0){
+                i--;
             }
-            if(landsToAdd < 1 || i > 31){
+            if(landsToAdd < 1 || i < 0){
                 // once it reaches the end of the array or runs out of extra lands to add, calculate error and return
                 let sumSq = 0;
                 for(let j = 0; j < 32; j++){
@@ -466,15 +470,24 @@
                 }
                 return [myRoundLands, sumSq + landsToAdd * 100, error];
             }
+            if(landsToAdd >= landsToRound){
+                let newRoundLands = myRoundLands.slice();
+                newRoundLands[i] += 1;
+                let newError = error.slice();
+                for(let j = 0; j < 32; j++){
+                    newError[j] += Math.sign(j & i);
+                }
+                return roundSearch(newRoundLands, myLandTypes, landsToAdd - 1, i - 1, newError, landsToRound - 1);
+            }
             // calculate two sets of lands, one with and without land i rounded up, run search on both of them, and return the one with less error
-            let set1 = roundSearch(myRoundLands.slice(), myLandTypes, landsToAdd, i + 1, error);
+            let set1 = roundSearch(myRoundLands.slice(), myLandTypes, landsToAdd, i - 1, error, landsToRound - 1);
             let newRoundLands = myRoundLands.slice();
             newRoundLands[i] += 1;
             let newError = error.slice();
             for(let j = 0; j < 32; j++){
                 newError[j] += Math.sign(j & i);
             }
-            let set2 = roundSearch(newRoundLands, myLandTypes, landsToAdd - 1, i + 1, newError);
+            let set2 = roundSearch(newRoundLands, myLandTypes, landsToAdd - 1, i - 1, newError, landsToRound - 1);
             if(set1[1] > set2[1]){
                 return set2;
             }
