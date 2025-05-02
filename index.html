@@ -271,6 +271,10 @@
         var lastLandTurn; // assuming a player starts with 7 cards and draws 1 card a turn, how many lands can they play before missing a land drop?
 
         var ignoreCards; // list of cards to be ignored from analysis
+        var roundWUBRG = [];
+        var landAdded = new Array(32).fill(0);
+
+        var roundTime;
         // staples to automatically discount
         const commonDiscounts = {
             "Blasphemous Act": 5,
@@ -532,6 +536,15 @@
             if(approxSamples == undefined){
                 approxSamples = 100000;
             }
+            let startTime = Date.now();
+            if(numColors(cost) == 5 && roundWUBRG.length == 0){
+                for(let n = 0; n <= 12; n++){
+                    // filter and round lands for given color combination
+                    let roundedLands = roundLands(landFilter(condAdjust(n), cost));
+                    roundWUBRG.push(roundedLands);
+                }
+            }
+            roundTime = Date.now()-startTime;
 
             let canCast = new Array(13);
             let comboReqs = getComboReqs(cost);
@@ -539,15 +552,34 @@
             if(numColors(cost) < approxColors){
                 for(let n = 0; n <= 12; n++){
                     // filter and round lands for given color combination
-                    let roundedLands = roundLands(landFilter(condAdjust(n), cost));
+                    let roundedLands = [];
+                    if(numColors(cost) == 5){
+                        roundedLands = roundWUBRG[n].slice();
+                        for(let i = 0; i < 32; i++){
+                            roundedLands[i] += landAdded[i];
+                        }
+                    }
+                    else{
+                        roundedLands = roundLands(landFilter(condAdjust(n), cost));    
+                    }
                     let roundedLandCount = sum(roundedLands);
                     result = rLandTest(cost, roundedLands, n, roundedLandCount, 31, 1, structuredClone(comboReqs));
                     canCast[n] = result;
                 }
-            }else{
+            }
+            else{
                 for(let n = 0; n <= 12; n++){
                     // filter and round lands for given color combination
-                    let roundedLands = roundLands(landFilter(condAdjust(n), cost));
+                    let roundedLands = [];
+                    if(numColors(cost) == 5){
+                        roundedLands = roundWUBRG[n].slice();
+                        for(let i = 0; i < 32; i++){
+                            roundedLands[i] += landAdded[i];
+                        }
+                    }
+                    else{
+                        roundedLands = roundLands(landFilter(condAdjust(n), cost));    
+                    }
                     let roundedLandCount = sum(roundedLands);
                     result = landTestUniformSample(cost, roundedLands, n, roundedLandCount, 31, 0, approxSamples, structuredClone(comboReqs));
                     canCast[n] = (result / approxSamples);
@@ -1293,6 +1325,8 @@
                 loadResult.innerText = "Deck loaded! (" + loadCount + ")";
             }
             loadCount++;
+            roundWUBRG = [];
+            landAdded = new Array(32).fill(0);
         }
 
         // On startup, disable the compute buttons until the user loads their deck
@@ -1653,6 +1687,7 @@
 
         // Change the manabase and run the analysis again to see how that changes the results.
         function testVariant(name, landDiff, baseRate, baseDelay){
+            landAdded = landDiff.slice();
             // back up global variables and make specified changes 
             let landCountBackup = landCount;
             let landTypesBackup = landTypes.slice();
@@ -1981,7 +2016,7 @@
 
             // check to make sure repeated analyses won't run too long and freeze
             let endTime = Date.now();
-            if(endTime - startTime > 1500){
+            if(endTime - startTime - roundTime > 1500){
                 console.log(`Execution time: ${endTime - startTime} ms`);
                 document.getElementById("color-analyzer-result-box").appendChild(table);
                 addError("color-analyzer-result-box", "Error: Land impact analysis cancelled, predicted runtime too high");
