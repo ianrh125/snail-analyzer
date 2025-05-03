@@ -518,7 +518,7 @@
             for(let i = 0; i < deckList.length; i++){
                 let match = false;
                 for(let j = 0; j < typeList.length && !match; j++){
-                    match = deckList[i].card_type.includes(typeList[j]);
+                    match = deckList[i].card_type.toLowerCase().includes(typeList[j].toLowerCase());
                 }
                 if(match){
                     numFound += deckList[i].count;
