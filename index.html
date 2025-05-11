@@ -2355,11 +2355,11 @@
             let relevantLands = relevantCards - relevantNL;
             let tapped = 0;
             // no relevant cards
-            if(relevantLands == 0 && relevantNL == 0){
+            if(relevantLands <= 1 && relevantNL <= 1){
                 return 1;
             }
             // relevant cards are all lands
-            if(relevantLands > 0 && relevantNL == 0){
+            if(relevantLands > 1 && relevantNL <= 1){
                 // based on the distribution of lands played before missing a drop, see if any of the desired cards are among those lands
                 for(let i = 0; i < lastLandTurn.length; i++){
                     let pTap = (1-drawTypeMin(landCount - 1, relevantLands, i-1, 1)) * i;
@@ -2370,12 +2370,12 @@
                 }
             }
             // relevant cards are all nonlands
-            else if(relevantLands == 0 && relevantNL > 0){
+            else if(relevantLands <= 1 && relevantNL > 1){
                 // we will miss a land drop once we draw 7 nonland cards (naively assuming no other card draw)
                 tapped = (1 - drawTypeMin(deckSize-landCount, relevantNL, 7, 1));
             }
             // relevant cards are all nonlands
-            else if(relevantLands > 0 && relevantNL > 0){
+            else if(relevantLands > 1 && relevantNL > 1){
                 addError("tap-analyzer-result-box", "You appear to be using check lands in a way we didn't know was possible. Go bother @rudeavocado in the Salubrious Snail discord server so he can add it to this tool");
             }
             // divide by the average number of lands encountered in this case to get the average.
