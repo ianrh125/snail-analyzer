@@ -272,7 +272,7 @@
 
         var ignoreCards; // list of cards to be ignored from analysis
         var roundWUBRG = [];
-        var landAdded = new Array(32).fill(0);
+        var landAdded;
 
         var roundTime;
         // staples to automatically discount
@@ -1869,6 +1869,7 @@
             let startTime = Date.now();
             let ignoreListContents = document.getElementById('ignore').value.split('\n');
             let ignored = false;
+            landAdded = new Array(32).fill(0);
             // reset discount and ignore status
             for(let i = 0; i < deckList.length; i++){
                 deckList[i].discount = 0;
