@@ -1145,7 +1145,45 @@
             else if(uniqueCards.has(name)){
                 deckList[uniqueCards.get(name)].count += count;
                 if(card.card_type.includes("Land")){
-                    landCount += count;
+                    // handle fetches
+                    let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
+                    if(card.mana_source.fetch){
+                        // break fetch lands down into pieces of lands they fetch for and add those to their relevant catefories
+                        let addLandTypes = getFetchEquivalent(card.mana_source);
+                        for(let i = 0; i < 32; i++){
+                            landTypes[i] += addLandTypes[i] * count;
+                        }
+                        landCount += count;
+                    }
+                    else if(card.mana_source.choose){
+                        // "choose a color" type mana sources (thriving, CLB gates)
+                        // 50% any color, 50% split between all relevant pairs
+                        let landIndex = findLandIndex(card.mana_source) & deckColors;
+                        let chooseIndex = deckColors & (~landIndex);
+                        let numColors = Math.sign(chooseIndex & 1) + Math.sign(chooseIndex & 2) + Math.sign(chooseIndex & 4) + Math.sign(chooseIndex & 8) + Math.sign(chooseIndex & 16);
+                        landTypes[chooseIndex | landIndex] += 0.5;
+                        for(let i = 1; i < 32; i *= 2){
+                            if(i & chooseIndex){
+                                landTypes[i | landIndex] += 1/(2*numColors);
+                            }
+                        }
+                        landCount += count;
+                    }
+                    else{
+                        // normal lands
+                        let landIndex = findLandIndex(card.mana_source) & deckColors;
+                        landTypes[landIndex] += count * sourceMult;
+                        landCount += count;
+                    }
+                    // note if land has conditions (i.e. verge lands)
+                    if(card.mana_source.cond){
+                        let index1 = findLandIndex(card.mana_source);
+                        let index2 = findLandIndex(card.mana_source.cond.colors) | index1;
+                        let condition = card.mana_source.cond.cond;
+                        condLands.push([index1, index2, condition]);
+                        condNames.push(name);
+                        console.log([index1, index2, condition]);
+                    }
                 }
             }
             else{
