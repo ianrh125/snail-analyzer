@@ -1853,8 +1853,8 @@
         L = document.getElementById('decklist').value,
         result = document.getElementById('color-analyzer-result');
 
-        approxColors = parseFloat(document.getElementById('approx-colors').value) || 100000;
-        approxSamples = parseFloat(document.getElementById('approx-samples').value) || 5;
+        approxColors = parseFloat(document.getElementById('approx-colors').value) || 5;
+        approxSamples = parseFloat(document.getElementById('approx-samples').value) || 100000;
         let landCountBackup = landCount;
         let landTypesBackup = landTypes.slice();
 
