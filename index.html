@@ -1012,8 +1012,13 @@
         // send request to server
         if(strippedL != lastDecklist){
             console.log('loading');
+            const deckLoadButton = document.getElementById("deck-load-button");
+            deckLoadButton.disabled = true;
+            deckLoadButton.value = 'Loading...';
             var response = await fetch('https://api.salubrioussnail.com/?cards=' + strippedL);
             console.log('loaded');
+            deckLoadButton.disabled = false;
+            deckLoadButton.value = 'Load';
             testDict = await response.json();
         }
         lastDecklist = strippedL;
@@ -2929,7 +2934,7 @@
         </div>
         <p>Partial matches are accepted ("atraxa", "yuriko", "kenrith", etc.)</p>
         <p>
-            <input type="button" value="Load" onclick="loadDict()">
+            <input type="button" value="Load" onclick="loadDict()" id="deck-load-button" style="width: 100px">
         </p>
         <div class="result-box" id="load-result-box">
             <p id='load-result' class="result-text"></p>
