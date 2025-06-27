@@ -1177,7 +1177,7 @@
                     else{
                         // normal lands
                         let landIndex = findLandIndex(card.mana_source) & deckColors;
-                        landTypes[landIndex] += count * sourceMult;
+                        landTypes[landIndex] += count;
                         landCount += count;
                     }
                     // note if land has conditions (i.e. verge lands)
