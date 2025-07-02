@@ -1931,7 +1931,14 @@
             commander3.ignore = false;
         }
 
+        let modifyList = document.getElementById('modify').value.split('\n');
+        let modified = false;
+
+        for(let i = 0; i < modifyList.length; i++){
+
+        }
         // iterate through list of ignored cards
+        /*
         for(let i = 0; i < ignoreListContents.length; i++){
             let listItem = ignoreListContents[i];
             let cardName = "";
@@ -2006,7 +2013,7 @@
                 }
             }
         }
-
+        */
         // reflect discount status onto stored card data for future loads
         for(let i = 0; i < deckList.length; i++){
             testDict[deckList[i].name].ignore = deckList[i].ignore;
@@ -2956,15 +2963,6 @@
             <p id='color-analyzer-result' class="result-text"></p>
         </div>
         <br>
-        <button onclick="toggleIgnore()">Ignore or Discount cards</button>
-        <div id="ignore-list" hidden>
-            <p class="prompt">List any cards you want to ignore or discount</p>
-            <textarea id="ignore" rows="5" cols="50"></textarea>
-            <p>&#34;-CARDNAME&#34; will remove a card from the analysis<br>
-            &#34;3 CARDNAME&#34; will reduce its cost by 3<br>
-            Click Compute again to factor in these changes<br>
-            (Partial matches are accepted here as well)</p>
-        </div>
     </div>
     <div class="analyzer" name="tapCalc">
         <p class="title">Tap Analyzer</p>
@@ -2974,6 +2972,17 @@
         </p>
         <div class="result-box" id="tap-analyzer-result-box">
             <p id='tap-analyzer-result' class="result-text"></p>
+        </div>
+    </div>
+    <div class="analyzer" name="modifier">
+        <p class="title">Settings & Card Modifications</p>
+        <div id="modifications">
+            <p class="prompt">Modify cards</p>
+            <textarea id="modify" rows="5" cols="50"></textarea>
+            <p> If a card name contains punctuation like () or :, put "" around it <br>
+                To remove an auto-generated mod, only remove the part after the ":"<br>
+                Modification syntax (insert link later)
+            </p>
         </div>
     </div>
 </body>
