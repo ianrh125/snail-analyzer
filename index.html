@@ -1897,10 +1897,49 @@
         card.turn = card.colorCost.t;
     }
     
-    function applyMod(selectionText, modText){
+    function inSelection(card, selectionText){
+        if(selectionText.charAt(0) == '('){
+            // using syntax, see how many constraints are being applied
+        }else{
+            // no syntax, 
+            return card.name.toLowerCase().includes(selectionText.toLowerCase());
+        }
+        return false;
+    }
+
+    function applyMod(card, modText){
+        
         return;
     }
 
+    // check selection criteria against all cards, apply mod to matching cards.
+    function runMod(selectionText, modText){
+        let cardsAffected = 0;
+        for(let i = 0; i < deckList.length; i++){
+            if(inSelection(deckList[i], selectionText)){
+                applyMod(deckList[i], modText);
+                cardsAffected++;
+            }
+        }
+        if(commander1 && inSelection(commander1, selectionText)){
+            applyMod(commander1, modText);
+            cardsAffected++;
+        }
+        if(commander2 && inSelection(commander2, selectionText)){
+            applyMod(commander2, modText);
+            cardsAffected++;
+        }
+        if(commander3 && inSelection(commander3, selectionText)){
+            applyMod(commander3, modText);
+            cardsAffected++;
+        }
+        if(cardsAffected == 0){
+            addError("modifications", "Warning: \"" + selectionText + "\" matches with 0 cards in your deck");
+        }
+        return;
+    }
+
+    // detect selection and mod fields of a mod and account for basic syntax errors
     function parseMod(textLine){
         // detect selection
         textLine = textLine.trim();
@@ -1949,7 +1988,7 @@
             }
         }
         
-        applyMod(selectionText, modText);
+        runMod(selectionText, modText);
         
         // detect mod
     }
@@ -3044,7 +3083,7 @@
         <div id="modifications">
             <p class="prompt">Modify cards</p>
             <textarea id="modify" rows="5" cols="50"></textarea>
-            <p> If a card name contains punctuation like () or :, put "" around it <br>
+            <p> If a card name contains () or :, put double quotes around it (i.e. "Summon: Fenrir")<br>
                 To remove an auto-generated mod, only remove the part after the ":"<br>
                 Modification syntax (insert link later)
             </p>
