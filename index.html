@@ -1889,6 +1889,71 @@
         document.getElementById(buttonId).className += " active";
     }
 
+    function resetMods(card){
+        card.modColorCost = structuredClone(card.colorCost);
+        card.modManaCost = card.mana_cost;
+        card.modManaSource = structuredClone(card.mana_source);
+        card.weight = 1;
+        card.turn = card.colorCost.t;
+    }
+    
+    function applyMod(selectionText, modText){
+        return;
+    }
+
+    function parseMod(textLine){
+        // detect selection
+        textLine = textLine.trim();
+        let selectionText = "";
+        let modText = "";
+        let quoteSplit = textLine.split("\"");
+        if(!textLine.includes("\"")){
+            quoteSplit = "1";
+        }
+        if(quoteSplit.length % 2 == 0){
+            addError("modifications", "Error in \"" + textLine + "\": Missing closing \"");
+            return;
+        }
+        if(quoteSplit.length == 3){
+            if(quoteSplit[0].length > 0){
+                addError("modifications", "Warning: Ambiguous quotes in \"" + textLine + "\". If \""+ quoteSplit[1] +"\" is the name of the card, please remove the part before it so it can be recognized");
+                textLine = textLine.replaceAll("\"", "");
+                quoteSplit = "1";
+            }
+            else{
+                selectionText = quoteSplit[1].trim();
+                modText = quoteSplit[2].trim();
+            }
+        }
+        if(quoteSplit.length > 3){
+            addError("modifications", "Error in \"" + textLine + "\": Too many sets of quotes (\"). Please just use one around the name of a card");
+            return;
+        }
+        if (quoteSplit.length == 1){
+            let colonSplit = textLine.split(":");
+            if (colonSplit == 2){
+                selectionText = colonSplit[0].trim();
+                modText = colonSplit[1].trim();
+            }
+            else if(colonSplit.length > 2){
+                for(let i = 0; i < colonSplit.length - 1; i++){
+                    selectionText += colonSplit[i];
+                }
+                selectionText = selectionText.trim();
+                modText = colonSplit[colonSplit.length - 1].trim();
+                addError("modifications", "Warning: multiple colons detected. Interpreting \"" + selectionText + "\" as selection and \"" + modText + "\" as modification");
+            }
+            else if(colonSplit.length < 2){
+                addError("modifications", "Error in \"" + textLine + "\": No colon found. Please add a colon (\":\") between the selection and modification");
+                return;
+            }
+        }
+        
+        applyMod(selectionText, modText);
+        
+        // detect mod
+    }
+
     // This is the one tied to the compute button on the color calculator
     function colorTest(){
         // grab input from calculator
@@ -1910,35 +1975,33 @@
         let greenBoost;
 
         let startTime = Date.now();
-        let ignoreListContents = document.getElementById('ignore').value.split('\n');
-        let ignored = false;
         landAdded = new Array(32).fill(0);
         // reset discount and ignore status
         for(let i = 0; i < deckList.length; i++){
-            deckList[i].discount = 0;
-            deckList[i].ignore = false;
+            resetMods(deckList[i]);
         }
         if(commander1){
-            commander1.discount = 0;
-            commander1.ignore = false;
+            resetMods(commander1);
         }
         if(commander2){
-            commander2.discount = 0;
-            commander2.ignore = false;
+            resetMods(commander2);
         }
         if(commander3){
-            commander3.discount = 0;
-            commander3.ignore = false;
+            resetMods(commander3);
         }
 
         let modifyList = document.getElementById('modify').value.split('\n');
         let modified = false;
+        clearError("modifications");
 
         for(let i = 0; i < modifyList.length; i++){
-
+            //console.log(modifyList[i]);
+            parseMod(modifyList[i]);
         }
         // iterate through list of ignored cards
         /*
+        let ignoreListContents = document.getElementById('ignore').value.split('\n');
+        let ignored = false;
         for(let i = 0; i < ignoreListContents.length; i++){
             let listItem = ignoreListContents[i];
             let cardName = "";
@@ -2013,9 +2076,7 @@
                 }
             }
         }
-        */
-        // reflect discount status onto stored card data for future loads
-        for(let i = 0; i < deckList.length; i++){
+            for(let i = 0; i < deckList.length; i++){
             testDict[deckList[i].name].ignore = deckList[i].ignore;
             testDict[deckList[i].name].discount = deckList[i].discount;
         }
@@ -2025,6 +2086,10 @@
             ignoreList.hidden = false;
             console.log("showing ignore list");
         }
+        */
+       
+        // reflect discount status onto stored card data for future loads
+        
 
         //remove previous errors
         clearError("color-analyzer-result-box");
