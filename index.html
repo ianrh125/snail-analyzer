@@ -1423,8 +1423,8 @@
         let dict = new Map();
         for(let i = 0; i < deckList.length; i++){
             // run the numbers for cards with a relevant mana cost
-            if(deckList[i].colorCost.t - deckList[i].discount == x){
-                let pips = colorReqs(deckList[i].colorCost);
+            if(deckList[i].modColorCost.t - deckList[i].discount == x){
+                let pips = colorReqs(deckList[i].modColorCost);
                 let pipCode = pipsToNum(pips);
                 if(!dict.has(pipCode)){
                     iterations = 0;
@@ -1433,8 +1433,8 @@
                 }
             }
             // run the numbers for cards with a relevant cycling cost
-            else if(deckList[i].mana_source.cycling != false && getColorCost(deckList[i].mana_source.cycling.cost).t == x){
-                let pips = colorReqs(getColorCost(deckList[i].mana_source.cycling.cost));
+            else if(deckList[i].modManaSource.cycling != false && getColorCost(deckList[i].modManaSource.cycling.cost).t == x){
+                let pips = colorReqs(getColorCost(deckList[i].modManaSource.cycling.cost));
                 let pipCode = pipsToNum(pips);
                 if(!dict.has(pipCode)){
                     iterations = 0;
@@ -1450,8 +1450,8 @@
     function scanForSources(x){
         for(let i = 0; i < deckList.length; i++){
             // make sure mana value lines up
-            if(deckList[i].colorCost.t - deckList[i].discount == x && !(deckList[i].card_type.includes("//") && deckList[i].card_type.includes("Land"))){
-                let landIndex = findLandIndex(deckList[i].mana_source);
+            if(deckList[i].modColorCost.t - deckList[i].discount == x && !(deckList[i].card_type.includes("//") && deckList[i].card_type.includes("Land"))){
+                let landIndex = findLandIndex(deckList[i].modManaSource);
                 let typeMult = 1;
                 // penalize more fragile permanent types
                 if(deckList[i].card_type.includes("Artifact")){
@@ -1461,17 +1461,17 @@
                     typeMult = 0.5;
                 }
                 // handle fetches
-                if(deckList[i].mana_source.fetch){
-                    let addLandTypes = getFetchEquivalent(deckList[i].mana_source);
+                if(deckList[i].modManaSource.fetch){
+                    let addLandTypes = getFetchEquivalent(deckList[i].modManaSource);
                     for(let j = 0; j < 32; j++){
                         landTypes[j] += addLandTypes[j] * deckList[i].count * typeMult;
                     }
                     landCount += deckList[i].count * typeMult;
                 }
                 // "choose a color" type mana sources (thriving, CLB gates)
-                else if(deckList[i].mana_source.choose){
+                else if(deckList[i].modManaSource.choose){
                     let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
-                    landIndex = findLandIndex(deckList[i].mana_source) & deckColors;
+                    landIndex = findLandIndex(deckList[i].modManaSource) & deckColors;
                     let chooseIndex = deckColors & (~landIndex);
                     let numColors = Math.sign(chooseIndex & 1) + Math.sign(chooseIndex & 2) + Math.sign(chooseIndex & 4) + Math.sign(chooseIndex & 8) + Math.sign(chooseIndex & 16);
                     landTypes[chooseIndex | landIndex] += 0.5 * typeMult;
@@ -1483,17 +1483,17 @@
                     landCount += deckList[i].count * typeMult;
                 }
                 // handle more typical sources
-                else if(landIndex != 0 || deckList[i].mana_source.amt > 0){
-                    typeMult *= turnsToCast(deckList[i].colorCost, deckList[i].discount)[x];
+                else if(landIndex != 0 || deckList[i].modManaSource.amt > 0){
+                    typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].discount)[x];
                     landTypes[landIndex] += deckList[i].count * typeMult;
                     landCount += deckList[i].count * typeMult;
                 }
             }
             // factor in landcycling
-            else if(deckList[i].mana_source.cycling != false && getColorCost(deckList[i].mana_source.cycling.cost).t == x){
-                if(deckList[i].mana_source.cycling.lands != false){
-                    let typeMult = turnsToCast(getColorCost(deckList[i].mana_source.cycling.cost), 0)[x];
-                    let addLandTypes = getFetchEquivalent(deckList[i].mana_source.cycling.lands);
+            else if(deckList[i].modManaSource.cycling != false && getColorCost(deckList[i].modManaSource.cycling.cost).t == x){
+                if(deckList[i].modManaSource.cycling.lands != false){
+                    let typeMult = turnsToCast(getColorCost(deckList[i].modManaSource.cycling.cost), 0)[x];
+                    let addLandTypes = getFetchEquivalent(deckList[i].modManaSource.cycling.lands);
                     for(let j = 0; j < 32; j++){
                         landTypes[j] += addLandTypes[j] * deckList[i].count * typeMult;
                     }
@@ -1554,7 +1554,7 @@
         // calculate for 4 and above based on lands, 1, 2, and 3
         for(let i = 0; i < deckList.length; i++){
 
-            let pips = colorReqs(deckList[i].colorCost);
+            let pips = colorReqs(deckList[i].modColorCost);
             let pipCode = pipsToNum(pips);
             if(!manaDict.has(pipCode)){
                 iterations = 0;
@@ -1564,24 +1564,24 @@
         }
         // calculate for commanders
         if(commander1){
-            let pips = colorReqs(commander1.colorCost);
+            let pips = colorReqs(commander1.modColorCost);
             let pipCode = pipsToNum(pips);
-            if(commander1.colorCost.t - commander1.discount == 1 && !oneDropDict.has(pipCode)){
+            if(commander1.modColorCost.t - commander1.discount == 1 && !oneDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 oneDropDict.set(pipCode, castDistro.slice());
             }
-            else if(commander1.colorCost.t - commander1.discount == 2 && !twoDropDict.has(pipCode)){
+            else if(commander1.modColorCost.t - commander1.discount == 2 && !twoDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 twoDropDict.set(pipCode, castDistro.slice());
             }
-            else if(commander1.colorCost.t - commander1.discount == 3 && !threeDropDict.has(pipCode)){
+            else if(commander1.modColorCost.t - commander1.discount == 3 && !threeDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 threeDropDict.set(pipCode, castDistro.slice());
             }
-            else if(commander1.colorCost.t - commander1.discount == 4 && !fourDropDict.has(pipCode)){
+            else if(commander1.modColorCost.t - commander1.discount == 4 && !fourDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 fourDropDict.set(pipCode, castDistro.slice());
@@ -1593,24 +1593,24 @@
             }
         }
         if(commander2){
-            let pips = colorReqs(commander2.colorCost);
+            let pips = colorReqs(commander2.modColorCost);
             let pipCode = pipsToNum(pips);
-            if(commander2.colorCost.t - commander2.discount == 1 && !oneDropDict.has(pipCode)){
+            if(commander2.modColorCost.t - commander2.discount == 1 && !oneDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 oneDropDict.set(pipCode, castDistro.slice());
             }
-            else if(commander2.colorCost.t - commander2.discount == 2 && !twoDropDict.has(pipCode)){
+            else if(commander2.modColorCost.t - commander2.discount == 2 && !twoDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 twoDropDict.set(pipCode, castDistro.slice());
             }
-            else if(commander2.colorCost.t - commander2.discount == 3 && !threeDropDict.has(pipCode)){
+            else if(commander2.modColorCost.t - commander2.discount == 3 && !threeDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 threeDropDict.set(pipCode, castDistro.slice());
             }
-            else if(commander2.colorCost.t - commander2.discount == 4 && !fourDropDict.has(pipCode)){
+            else if(commander2.modColorCost.t - commander2.discount == 4 && !fourDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 fourDropDict.set(pipCode, castDistro.slice());
@@ -1622,24 +1622,24 @@
             }
         }
         if(commander3){
-            let pips = colorReqs(commander3.colorCost);
+            let pips = colorReqs(commander3.modColorCost);
             let pipCode = pipsToNum(pips);
-            if(commander3.colorCost.t - commander3.discount == 1 && !oneDropDict.has(pipCode)){
+            if(commander3.modColorCost.t - commander3.discount == 1 && !oneDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 oneDropDict.set(pipCode, castDistro.slice());
             }
-            else if(commander3.colorCost.t - commander3.discount == 2 && !twoDropDict.has(pipCode)){
+            else if(commander3.modColorCost.t - commander3.discount == 2 && !twoDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 twoDropDict.set(pipCode, castDistro.slice());
             }
-            else if(commander3.colorCost.t - commander3.discount == 3 && !threeDropDict.has(pipCode)){
+            else if(commander3.modColorCost.t - commander3.discount == 3 && !threeDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 threeDropDict.set(pipCode, castDistro.slice());
             }
-            else if(commander3.colorCost.t - commander3.discount == 4 && !fourDropDict.has(pipCode)){
+            else if(commander3.modColorCost.t - commander3.discount == 4 && !fourDropDict.has(pipCode)){
                 iterations = 0;
                 castDistro = pipDist(pips);
                 fourDropDict.set(pipCode, castDistro.slice());
@@ -1660,59 +1660,60 @@
         if(commander1){
             let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
             // get the distribution to afford the commander's mana cost
-            let turnCastDist = turnsToCast(commander1.colorCost, commander1.discount);
-            let cmc = Math.min(commander1.colorCost.t - commander1.discount, 12);
+            let turnCastDist = turnsToCast(commander1.modColorCost, commander1.discount);
             // use it to calculate how often it's played on time, and how late it generally gets played
-            let onCurveRate = turnCastDist[cmc];
-            let avgDelay = mean(turnCastDist) - commander1.colorCost.t + commander1.discount;
+            let onCurveRate = turnCastDist[commander1.turn];
+            let avgDelay = mean(turnCastDist) - commander1.turn;
+            let cmc = Math.min(commander1.modColorCost.t, 12);
             cmcOnCurve += onCurveRate * cmc * weight;
             totalCmcDelay += avgDelay * cmc * weight;
             totalCmc += cmc * weight;
-            if(!costsCovered.has(factorDiscount(commander1.mana_cost, commander1.discount))){
-                costsCovered.add(factorDiscount(commander1.mana_cost, commander1.discount));
+            if(!costsCovered.has(commander1.modManaCost)){
+                costsCovered.add(commander1.modManaCost);
             }
             allCards.push([commander1.name, onCurveRate, avgDelay]);
         }
         if(commander2){
             let weight = document.getElementById("cmdr2-weight").selectedOptions[0].value;
-            let turnCastDist = turnsToCast(commander2.colorCost, commander2.discount)
-            let cmc = Math.min(commander2.colorCost.t - commander2.discount, 12);
-            let onCurveRate = turnCastDist[cmc];
-            let avgDelay = mean(turnCastDist) - commander2.colorCost.t + commander2.discount;
+            let turnCastDist = turnsToCast(commander2.modColorCost, commander2.discount)
+            let onCurveRate = turnCastDist[commander2.turn];
+            let avgDelay = mean(turnCastDist) - commander2.turn;
+            let cmc = Math.min(commander2.modColorCost.t, 12);
             cmcOnCurve += onCurveRate * cmc * weight;
             totalCmcDelay += avgDelay * cmc * weight;
             totalCmc += cmc * weight;
-            if(!costsCovered.has(factorDiscount(commander2.mana_cost, commander2.discount))){
-                costsCovered.add(factorDiscount(commander2.mana_cost, commander2.discount));
+            if(!costsCovered.has(commander2.modManaCost)){
+                costsCovered.add(commander2.modManaCost);
             }
             allCards.push([commander2.name, onCurveRate, avgDelay]);
         }
         if(commander3){
             let weight = document.getElementById("cmdr3-weight").selectedOptions[0].value;
-            let turnCastDist = turnsToCast(commander3.colorCost, commander3.discount);
-            let cmc = Math.min(commander3.colorCost.t - commander3.discount, 12);
-            let onCurveRate = turnCastDist[cmc];
-            let avgDelay = mean(turnCastDist) - commander3.colorCost.t + commander3.discount;
+            let turnCastDist = turnsToCast(commander3.modColorCost);
+            let onCurveRate = turnCastDist[commander3.turn];
+            let avgDelay = mean(turnCastDist) - commander3.turn;
+            let cmc = Math.min(commander3.modColorCost.t, 12);
             cmcOnCurve += onCurveRate * cmc * weight;
             totalCmcDelay += avgDelay * cmc * weight;
             totalCmc += cmc * weight;
-            if(!costsCovered.has(factorDiscount(commander3.mana_cost, commander3.discount))){
-                costsCovered.add(factorDiscount(commander3.mana_cost, commander3.discount));
+            if(!costsCovered.has(commander3.modManaCost)){
+                costsCovered.add(commander3.modManaCost);
             }
             allCards.push([commander3.name, onCurveRate, avgDelay]);
         }
         // do the same for every other card in the deck
         for(let i = 0; i < deckList.length; i++){
             if((!deckList[i].card_type.includes("Land") || (deckList[i].card_type.includes("//") && !(deckList[i].card_type == "Land // Land"))) && !deckList[i].ignore){
-                let turnCastDist = turnsToCast(deckList[i].colorCost, deckList[i].discount);
-                let cmc = Math.min(deckList[i].colorCost.t - deckList[i].discount, 12);
-                let onCurveRate = turnCastDist[cmc];
-                let avgDelay = mean(turnCastDist) - deckList[i].colorCost.t + deckList[i].discount;
-                cmcOnCurve += onCurveRate * cmc;
-                totalCmcDelay += avgDelay * cmc;
-                totalCmc += cmc;
-                if(!costsCovered.has(factorDiscount(deckList[i].mana_cost, deckList[i].discount))){
-                    costsCovered.add(factorDiscount(deckList[i].mana_cost, deckList[i].discount));
+                let weight = deckList[i].weight;
+                let turnCastDist = turnsToCast(deckList[i].modColorCost, deckList[i].discount);
+                let cmc = Math.min(deckList[i].modColorCost.t, 12);
+                let onCurveRate = turnCastDist[deckList[i].turn];
+                let avgDelay = mean(turnCastDist) - deckList[i].turn;
+                cmcOnCurve += onCurveRate * cmc * weight;
+                totalCmcDelay += avgDelay * cmc * weight;
+                totalCmc += cmc * weight;
+                if(!costsCovered.has(deckList[i].modManaCost)){
+                    costsCovered.add(deckList[i].modManaCost);
                     allCards.push([deckList[i].name, onCurveRate, avgDelay]);
                 }
             }
@@ -1908,7 +1909,15 @@
     }
 
     function applyMod(card, modText){
-        
+        if(modText.includes("m=")){
+            let mana = modText.substring(modText.indexOf("m=") + 2);
+            let properMana = "";
+            for(let i = 0; i < mana.length; i++){
+                properMana += "{" + mana.charAt(i) + "}";
+            }
+            card.modManaCost = properMana;
+            card.modColorCost = getColorCost(properMana);
+        }
         return;
     }
 
@@ -1970,7 +1979,7 @@
         }
         if (quoteSplit.length == 1){
             let colonSplit = textLine.split(":");
-            if (colonSplit == 2){
+            if (colonSplit.length == 2){
                 selectionText = colonSplit[0].trim();
                 modText = colonSplit[1].trim();
             }
@@ -1993,6 +2002,29 @@
         // detect mod
     }
 
+    function processMods(){
+        let modifyList = document.getElementById('modify').value.split('\n');
+        let modified = false;
+        clearError("modifications");
+
+        for(let i = 0; i < deckList.length; i++){
+            resetMods(deckList[i]);
+        }
+        if(commander1){
+            resetMods(commander1);
+        }
+        if(commander2){
+            resetMods(commander2);
+        }
+        if(commander3){
+            resetMods(commander3);
+        }
+
+        for(let i = 0; i < modifyList.length; i++){
+            //console.log(modifyList[i]);
+            parseMod(modifyList[i]);
+        }
+    }
     // This is the one tied to the compute button on the color calculator
     function colorTest(){
         // grab input from calculator
@@ -2016,27 +2048,8 @@
         let startTime = Date.now();
         landAdded = new Array(32).fill(0);
         // reset discount and ignore status
-        for(let i = 0; i < deckList.length; i++){
-            resetMods(deckList[i]);
-        }
-        if(commander1){
-            resetMods(commander1);
-        }
-        if(commander2){
-            resetMods(commander2);
-        }
-        if(commander3){
-            resetMods(commander3);
-        }
 
-        let modifyList = document.getElementById('modify').value.split('\n');
-        let modified = false;
-        clearError("modifications");
-
-        for(let i = 0; i < modifyList.length; i++){
-            //console.log(modifyList[i]);
-            parseMod(modifyList[i]);
-        }
+        processMods();
         // iterate through list of ignored cards
         /*
         let ignoreListContents = document.getElementById('ignore').value.split('\n');
@@ -2213,7 +2226,7 @@
             } else {
                 rowClass[3] = "table-num-red";
             }
-            cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(factorDiscount(testDict[allCards[i][0]].mana_cost, testDict[allCards[i][0]].discount)), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td", rowClass));
+            cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(factorDiscount(testDict[allCards[i][0]].modManaCost, testDict[allCards[i][0]].discount)), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td", rowClass));
         }
 
         landCount = landCountBackup;
@@ -2680,22 +2693,22 @@
             let maxMana = 0;
             for(let i = 0; i < deckList.length; i++){
                 if(!deckList[i].card_type.includes("Land")){
-                    if(deckList[i].colorCost.t > 12){
+                    if(deckList[i].modColorCost.t > 12){
                         curve[12] += deckList[i].count;
-                        if(deckList[i].mana_source.amt > 0){
+                        if(deckList[i].modManaSource.amt > 0){
                             ramp[12] += deckList[i].count;
                         }
                         nonland += deckList[i].count;
                     }
                     else{
-                        curve[deckList[i].colorCost.t] += deckList[i].count;
-                        if(deckList[i].mana_source.amt > 0){
-                            ramp[deckList[i].colorCost.t] += deckList[i].count;
+                        curve[deckList[i].modColorCost.t] += deckList[i].count;
+                        if(deckList[i].modManaSource.amt > 0){
+                            ramp[deckList[i].modColorCost.t] += deckList[i].count;
                         }
                         nonland += deckList[i].count;
                     }
-                    if(deckList[i].colorCost.t > maxMana){
-                        maxMana = deckList[i].colorCost.t;
+                    if(deckList[i].modColorCost.t > maxMana){
+                        maxMana = deckList[i].modColorCost.t;
                     }
                 }
             }
@@ -2754,13 +2767,13 @@
                     let value = 0;
                     // check how many commanders we gain access to
                     let commanders = 0;
-                    if(commander1 != undefined && commander1.colorCost.t == cmc){
+                    if(commander1 != undefined && commander1.modColorCost.t == cmc){
                         commanders += 1;
                     }
-                    if(commander2 != undefined && commander2.colorCost.t == cmc){
+                    if(commander2 != undefined && commander2.modColorCost.t == cmc){
                         commanders += 1;
                     }
-                    if(commander3 != undefined && commander3.colorCost.t == cmc){
+                    if(commander3 != undefined && commander3.modColorCost.t == cmc){
                         commanders += 1;
                     }
                     let newMin = min;
@@ -2934,6 +2947,7 @@
 
             // remove previous errors
             clearError("tap-analyzer-result-box");
+            processMods(); // make sure mods are covered
 
             let tapTotal = 0;
             let untapTotal = 0;
@@ -2958,7 +2972,7 @@
             // iterate through lands adding up tap status
             for(let i = 0; i < deckList.length; i++){
                 if(deckList[i].card_type.includes("Land")){
-                    let tap = pTap(deckList[i].mana_source, turns);
+                    let tap = pTap(deckList[i].modManaSource, turns);
                     tapTotal += deckList[i].count * tap;
                     untapTotal += deckList[i].count * (1 - tap);
                     // add sometimes-tapped lands to table and color code
