@@ -992,7 +992,15 @@
 
         // sanitize input
         L = document.getElementById('decklist').value;
-        let sanitizedL = L.replaceAll("&", "%26").replaceAll("1x", "1").replaceAll("2x", "2").replaceAll("3x", "3").replaceAll("4x", "4").replaceAll("5x", "5").replaceAll("6x", "6").replaceAll("7x", "7").replaceAll("8x", "8").replaceAll("9x", "9").replaceAll("0x", "0").replaceAll(/ \[.*\]/g, "").replaceAll(" *F*", "").replaceAll(/#.*\n/g, "\n").replaceAll("+", "PLUS");
+        let sanitizedL = L
+            .replaceAll("&", "%26") // replace ampersands temporarily
+            .replaceAll("+", "PLUS") // replace pluses temporarily
+            .replaceAll(/^\s*/gm, "") // remove spaces at line starts
+            .replaceAll(/\s*$/gm, "") // remove spaces at line ends
+            .replaceAll(/^(\d+)x\s+/gm, "$1 ") // remove "x" from quantities at line starts
+            .replaceAll(/\s*\[.*\]/gmu, "") // remove anything within squared brackets
+            .replaceAll(/\s+\*F\*/gm, "") // remove " *F*"
+            .replaceAll(/\s*#.*$/gm, ""); // remove anything after "#"
         let splitL = sanitizedL.split("\n");
         let strippedL = "";
         let inSideboard = false;
