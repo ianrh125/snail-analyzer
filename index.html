@@ -807,25 +807,25 @@
     }
 
     // Using the stored pipdist dictionaries, get the distribution of how many lands are required to cast a spell
-    function landsToCast(cost, discount){
+    function landsToCast(cost, turn){
         let pipReqs = [];
-        if(cost.t - discount == 1){
+        if(cost.t == 1){
             pipReqs = oneDropDict.get(pipsToNum(cost)).slice();
         }
-        else if(cost.t - discount == 2){
+        else if(cost.t == 2){
             pipReqs = twoDropDict.get(pipsToNum(cost)).slice();
         }
-        else if(cost.t - discount == 3){
+        else if(cost.t == 3){
             pipReqs = threeDropDict.get(pipsToNum(cost)).slice();
         }
-        else if(cost.t - discount == 4){
+        else if(cost.t == 4){
             pipReqs = fourDropDict.get(pipsToNum(cost)).slice();
         }
         else{
             let numfromPips = pipsToNum(cost)
             pipReqs = manaDict.get(numfromPips).slice();
         }
-        for(let i = 0; i < cost.t - discount; i++){
+        for(let i = 0; i < cost.t; i++){
             pipReqs[i] = 0;
         }
         return pipReqs;
@@ -854,17 +854,17 @@
     }
 
     // using the distributions of how many lands are required to cast a given spell and how many are available at a given turn, find the pdf on casting a spell on turns 1-12
-    function turnsToCast(cost, discount){
-        let landReqs = landsToCast(cost, discount);
+    function turnsToCast(cost, turn){
+        let landReqs = landsToCast(cost, turn);
         let canCast = new Array(16);
-        for(let i = 0; i < cost.t - discount; i++){
+        for(let i = 0; i < turn; i++){
             canCast[i] = 0;
         }
         // iterate through turns ranging from the first turn where it becomes possible to the last turn we consider
-        for(let i = cost.t - discount; i <= 15; i++){
+        for(let i = turn; i <= 15; i++){
             let pCast = 0;
             let landDist = landsAtTurn(i);
-            for(let lands = cost.t - discount; lands <= 12; lands++){
+            for(let lands = cost.t; lands <= 12; lands++){
                 pCast += landReqs[lands] * landDist[lands];
             }
             canCast[i] = pCast
@@ -1484,7 +1484,7 @@
                 }
                 // handle more typical sources
                 else if(landIndex != 0 || deckList[i].modManaSource.amt > 0){
-                    typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].discount)[x];
+                    typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].turn)[x];
                     landTypes[landIndex] += deckList[i].count * typeMult;
                     landCount += deckList[i].count * typeMult;
                 }
@@ -1660,7 +1660,7 @@
         if(commander1){
             let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
             // get the distribution to afford the commander's mana cost
-            let turnCastDist = turnsToCast(commander1.modColorCost, commander1.discount);
+            let turnCastDist = turnsToCast(commander1.modColorCost, commander1.turn);
             // use it to calculate how often it's played on time, and how late it generally gets played
             let onCurveRate = turnCastDist[commander1.turn];
             let avgDelay = mean(turnCastDist) - commander1.turn;
@@ -1675,7 +1675,7 @@
         }
         if(commander2){
             let weight = document.getElementById("cmdr2-weight").selectedOptions[0].value;
-            let turnCastDist = turnsToCast(commander2.modColorCost, commander2.discount)
+            let turnCastDist = turnsToCast(commander2.modColorCost, commander2.turn)
             let onCurveRate = turnCastDist[commander2.turn];
             let avgDelay = mean(turnCastDist) - commander2.turn;
             let cmc = Math.min(commander2.modColorCost.t, 12);
@@ -1689,7 +1689,7 @@
         }
         if(commander3){
             let weight = document.getElementById("cmdr3-weight").selectedOptions[0].value;
-            let turnCastDist = turnsToCast(commander3.modColorCost);
+            let turnCastDist = turnsToCast(commander3.modColorCost, commander3.turn);
             let onCurveRate = turnCastDist[commander3.turn];
             let avgDelay = mean(turnCastDist) - commander3.turn;
             let cmc = Math.min(commander3.modColorCost.t, 12);
@@ -1705,7 +1705,7 @@
         for(let i = 0; i < deckList.length; i++){
             if((!deckList[i].card_type.includes("Land") || (deckList[i].card_type.includes("//") && !(deckList[i].card_type == "Land // Land"))) && !deckList[i].ignore){
                 let weight = deckList[i].weight;
-                let turnCastDist = turnsToCast(deckList[i].modColorCost, deckList[i].discount);
+                let turnCastDist = turnsToCast(deckList[i].modColorCost, deckList[i].turn);
                 let cmc = Math.min(deckList[i].modColorCost.t, 12);
                 let onCurveRate = turnCastDist[deckList[i].turn];
                 let avgDelay = mean(turnCastDist) - deckList[i].turn;
@@ -1917,7 +1917,8 @@
         }
         else{
             modText = modText.replaceAll("mana=","m=").replaceAll("mana+","m+").replaceAll("mana-","m-")
-                            .replaceAll("weight=","w=");
+                            .replaceAll("weight=","w=")
+                            .replaceAll("turn=","t=").replaceAll("turn+", "t+").replaceAll("turn-", "t-");
             if(modText.includes("m=")){
                 let mana = modText.substring(modText.indexOf("m=") + 2).toUpperCase();
                 let properMana = "";
@@ -2029,6 +2030,18 @@
             if(modText.includes("w=")){
                 let weight = parseFloat(modText.substring(modText.indexOf("w=") + 2));
                 card.weight = weight;
+            }
+            if(modText.includes("t=")){
+                let turn = parseInt(modText.substring(modText.indexOf("t=") + 2));
+                card.turn = turn;
+            }
+            if(modText.includes("t+")){
+                let turn = parseInt(modText.substring(modText.indexOf("t+") + 2));
+                card.turn += turn;
+            }
+            if(modText.includes("t-")){
+                let turn = parseInt(modText.substring(modText.indexOf("t-") + 2));
+                card.turn -= turn;
             }
         }
         
