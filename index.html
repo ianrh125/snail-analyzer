@@ -1909,116 +1909,129 @@
     }
 
     function applyMod(card, modText){
-        modText = modText.replaceAll("mana=","m=").replaceAll("mana+","m+").replaceAll("mana-","m-");
-        if(modText.includes("m=")){
-            let mana = modText.substring(modText.indexOf("m=") + 2).toUpperCase();
-            let properMana = "";
-            for(let i = 0; i < mana.length; i++){
-                properMana += "{" + mana.charAt(i) + "}";
+        if(modText.includes(",")){
+            let modList = modText.split(",");
+            for(let i = 0; i < modList.length; i++){
+                applyMod(card, modList[i].trim());
             }
-            card.modManaCost = properMana;
-            card.modColorCost = getColorCost(properMana);
-            card.turn = card.modColorCost.t;
         }
-        if(modText.includes("m+")){
-            let mana = modText.substring(modText.indexOf("m+") + 2).toUpperCase();
-            for(let i = 0; i < mana.length; i++){
-                let gAmount = parseInt(mana.charAt(i)) || 0;
-                if(mana.charAt(i) == "W"){
-                    card.modColorCost.w++;
-                    card.modColorCost.t++;
+        else{
+            modText = modText.replaceAll("mana=","m=").replaceAll("mana+","m+").replaceAll("mana-","m-")
+                            .replaceAll("weight=","w=");
+            if(modText.includes("m=")){
+                let mana = modText.substring(modText.indexOf("m=") + 2).toUpperCase();
+                let properMana = "";
+                for(let i = 0; i < mana.length; i++){
+                    properMana += "{" + mana.charAt(i) + "}";
                 }
-                else if(mana.charAt(i) == "U"){
-                    card.modColorCost.u++;
-                    card.modColorCost.t++;
+                card.modManaCost = properMana;
+                card.modColorCost = getColorCost(properMana);
+                card.turn = card.modColorCost.t;
+            }
+            if(modText.includes("m+")){
+                let mana = modText.substring(modText.indexOf("m+") + 2).toUpperCase();
+                for(let i = 0; i < mana.length; i++){
+                    let gAmount = parseInt(mana.charAt(i)) || 0;
+                    if(mana.charAt(i) == "W"){
+                        card.modColorCost.w++;
+                        card.modColorCost.t++;
+                    }
+                    else if(mana.charAt(i) == "U"){
+                        card.modColorCost.u++;
+                        card.modColorCost.t++;
+                    }
+                    else if(mana.charAt(i) == "B"){
+                        card.modColorCost.b++;
+                        card.modColorCost.t++;
+                    }
+                    else if(mana.charAt(i) == "R"){
+                        card.modColorCost.r++;
+                        card.modColorCost.t++;
+                    }
+                    else if(mana.charAt(i) == "G"){
+                        card.modColorCost.g++;
+                        card.modColorCost.t++;
+                    }
+                    else if(gAmount > 0){
+                        card.modColorCost.c += gAmount;
+                        card.modColorCost.t += gAmount;
+                    }
                 }
-                else if(mana.charAt(i) == "B"){
-                    card.modColorCost.b++;
-                    card.modColorCost.t++;
+                let properMana = "{" + card.modColorCost.c+ "}";
+                for(let i = 0; i < card.modColorCost.w; i++){
+                    properMana += "{W}";
                 }
-                else if(mana.charAt(i) == "R"){
-                    card.modColorCost.r++;
-                    card.modColorCost.t++;
+                for(let i = 0; i < card.modColorCost.u; i++){
+                    properMana += "{U}";
                 }
-                else if(mana.charAt(i) == "G"){
-                    card.modColorCost.g++;
-                    card.modColorCost.t++;
+                for(let i = 0; i < card.modColorCost.b; i++){
+                    properMana += "{B}";
                 }
-                else if(gAmount > 0){
-                    card.modColorCost.c += gAmount;
-                    card.modColorCost.t += gAmount;
+                for(let i = 0; i < card.modColorCost.r; i++){
+                    properMana += "{R}";
                 }
+                for(let i = 0; i < card.modColorCost.g; i++){
+                    properMana += "{G}";
+                }
+                
+                card.modManaCost = properMana;
+                card.turn = card.modColorCost.t;
             }
-            let properMana = "{" + card.modColorCost.c+ "}";
-            for(let i = 0; i < card.modColorCost.w; i++){
-                properMana += "{W}";
+            if(modText.includes("m-")){
+                let mana = modText.substring(modText.indexOf("m-") + 2).toUpperCase();
+                for(let i = 0; i < mana.length; i++){
+                    let gAmount = parseInt(mana.charAt(i)) || 0;
+                    if(mana.charAt(i) == "W" && card.modColorCost.w > 0){
+                        card.modColorCost.w--;
+                        card.modColorCost.t--;
+                    }
+                    else if(mana.charAt(i) == "U" && card.modColorCost.u > 0){
+                        card.modColorCost.u--;
+                        card.modColorCost.t--;
+                    }
+                    else if(mana.charAt(i) == "B" && card.modColorCost.b > 0){
+                        card.modColorCost.b--;
+                        card.modColorCost.t--;
+                    }
+                    else if(mana.charAt(i) == "R" && card.modColorCost.r > 0){
+                        card.modColorCost.r--;
+                        card.modColorCost.t--;
+                    }
+                    else if(mana.charAt(i) == "G" && card.modColorCost.g > 0){
+                        card.modColorCost.g--;
+                        card.modColorCost.t--;
+                    }
+                    else if(gAmount > 0){
+                        card.modColorCost.c -= Math.min(gAmount, card.modColorCost.c);
+                        card.modColorCost.t -= Math.min(gAmount, card.modColorCost.c);
+                    }
+                }
+                let properMana = "{" + card.modColorCost.c+ "}";
+                for(let i = 0; i < card.modColorCost.w; i++){
+                    properMana += "{W}";
+                }
+                for(let i = 0; i < card.modColorCost.u; i++){
+                    properMana += "{U}";
+                }
+                for(let i = 0; i < card.modColorCost.b; i++){
+                    properMana += "{B}";
+                }
+                for(let i = 0; i < card.modColorCost.r; i++){
+                    properMana += "{R}";
+                }
+                for(let i = 0; i < card.modColorCost.g; i++){
+                    properMana += "{G}";
+                }
+                
+                card.modManaCost = properMana;
+                card.turn = card.modColorCost.t;
             }
-            for(let i = 0; i < card.modColorCost.u; i++){
-                properMana += "{U}";
+            if(modText.includes("w=")){
+                let weight = parseFloat(modText.substring(modText.indexOf("w=") + 2));
+                card.weight = weight;
             }
-            for(let i = 0; i < card.modColorCost.b; i++){
-                properMana += "{B}";
-            }
-            for(let i = 0; i < card.modColorCost.r; i++){
-                properMana += "{R}";
-            }
-            for(let i = 0; i < card.modColorCost.g; i++){
-                properMana += "{G}";
-            }
-            
-            card.modManaCost = properMana;
-            card.turn = card.modColorCost.t;
         }
-        if(modText.includes("m-")){
-            let mana = modText.substring(modText.indexOf("m-") + 2).toUpperCase();
-            for(let i = 0; i < mana.length; i++){
-                let gAmount = parseInt(mana.charAt(i)) || 0;
-                if(mana.charAt(i) == "W" && card.modColorCost.w > 0){
-                    card.modColorCost.w--;
-                    card.modColorCost.t--;
-                }
-                else if(mana.charAt(i) == "U" && card.modColorCost.u > 0){
-                    card.modColorCost.u--;
-                    card.modColorCost.t--;
-                }
-                else if(mana.charAt(i) == "B" && card.modColorCost.b > 0){
-                    card.modColorCost.b--;
-                    card.modColorCost.t--;
-                }
-                else if(mana.charAt(i) == "R" && card.modColorCost.r > 0){
-                    card.modColorCost.r--;
-                    card.modColorCost.t--;
-                }
-                else if(mana.charAt(i) == "G" && card.modColorCost.g > 0){
-                    card.modColorCost.g--;
-                    card.modColorCost.t--;
-                }
-                else if(gAmount > 0){
-                    card.modColorCost.c -= Math.min(gAmount, card.modColorCost.c);
-                    card.modColorCost.t -= Math.min(gAmount, card.modColorCost.c);
-                }
-            }
-            let properMana = "{" + card.modColorCost.c+ "}";
-            for(let i = 0; i < card.modColorCost.w; i++){
-                properMana += "{W}";
-            }
-            for(let i = 0; i < card.modColorCost.u; i++){
-                properMana += "{U}";
-            }
-            for(let i = 0; i < card.modColorCost.b; i++){
-                properMana += "{B}";
-            }
-            for(let i = 0; i < card.modColorCost.r; i++){
-                properMana += "{R}";
-            }
-            for(let i = 0; i < card.modColorCost.g; i++){
-                properMana += "{G}";
-            }
-            
-            card.modManaCost = properMana;
-            card.turn = card.modColorCost.t;
-        }
-        return;
+        
     }
 
     // check selection criteria against all cards, apply mod to matching cards.
