@@ -1003,6 +1003,7 @@
             .replaceAll(/\s*#.*$/gm, ""); // remove anything after "#"
 
         if(sanitizedL == ""){
+            addError("load-result-box", "Error: no cards entered");
             return;
         }
         let splitL = sanitizedL.split("\n");
