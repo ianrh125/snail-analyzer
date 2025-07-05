@@ -1899,12 +1899,113 @@
     }
     
     function inSelection(card, selectionText){
-        if(selectionText.charAt(0) == '('){
-            // using syntax, see how many constraints are being applied
-        }else{
-            // no syntax, 
-            return card.name.toLowerCase().includes(selectionText.toLowerCase());
+        if(selectionText.charAt(0)== '!'){
+            return !inSelection(card, selectionText.substring(1).trim());
         }
+        // check for brackets
+        if(selectionText.charAt(0) == '('){
+            let close = selectionText.indexOf(")");
+            if(close < selectionText.length - 2){ //  there's more to it, put result in string and continue parsing
+                if(inSelection(card, selectionText.substring(1, close).trim())){
+                    return inSelection(card, selectionText.replace(selectionText.substring(0, close+1), "TRUE"));
+                }
+                return inSelection(card, selectionText.replace(selectionText.substring(0, close+1), "FALSE"));
+            }
+            else{
+                return inSelection(card, selectionText.substring(1, close).trim());
+            }
+        }
+        // check for quotations
+        if(selectionText.charAt(0) == '"'){
+            let close = selectionText.substring(1).indexOf('"') + 1;
+            let matchText = selectionText.substring(1, close);
+            let matchResult = card.name.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "")
+                    .includes(matchText.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, ""));
+            
+            if(close < selectionText.length - 2){ //  there's more to it, put result in string and continue parsing
+                if(matchResult){
+                    return inSelection(card, selectionText.replace(selectionText.substring(0, close+1), "TRUE"));
+                }
+                return inSelection(card, selectionText.replace(selectionText.substring(0, close+1), "FALSE"));
+            }
+            else{
+                return matchResult;
+            }
+        }
+        // resolve multiple selections strung together by logical operators
+        if(selectionText.includes(",") || selectionText.includes("|")){
+            let nextOperator = 0;
+            let truthValue = false;
+            selectionText = "|" + selectionText;
+            while(selectionText.includes(",") || selectionText.includes("|")){
+                // log current operator
+                let operator = selectionText.charAt(0);
+                selectionText = selectionText.substring(1);
+                // find next operator
+                if(selectionText.includes(",") && selectionText.includes("|")){
+                    nextOperator = Math.min(selectionText.indexOf(","), selectionText.indexOf("|"));
+                }
+                else if(selectionText.includes(",")){
+                    nextOperator = selectionText.indexOf(",");
+                }
+                else if(selectionText.includes("|")){
+                    nextOperator = selectionText.indexOf("|");
+                }
+                else{
+                    nextOperator = selectionText.length;
+                }
+                // extract and evaluate single condition
+                let nextSelection = selectionText.substring(0, nextOperator).trim();
+                if (operator == "|"){
+                    truthValue = truthValue || inSelection(card, nextSelection);
+                }
+                else if(operator == ","){
+                    truthValue = truthValue && inSelection(card, nextSelection);
+                }
+                else{
+                    console.log("Unexpected operator: '" + operator + "'");
+                }
+                // cut condition out of selection text, continue evaluating
+                selectionText = selectionText.substring(nextOperator);
+            }
+            return truthValue;
+        }
+        // evaluate specific selections
+        selectionText = selectionText
+            .replace(" =", "=")
+            .replace("= ", "=")
+            .replace("type", "t")
+            .replace("mv", "m")
+            .replace("cmc", "m")
+            .replace("mana", "m")
+            .replace("color", "c")
+            .replace("id", "c")
+        if(selectionText == "TRUE"){
+            return true;
+        }
+        if(selectionText == "FALSE"){
+            return false;
+        }
+        if(selectionText.substring(0,2) == "t="){
+            return card.card_type.toLowerCase().includes(selectionText.substring(2).toLowerCase());
+        }
+        if(selectionText.substring(0,2) == "m="){
+            return card.modColorCost.t == parseInt(selectionText.substring(2));
+        }
+        if(selectionText.substring(0,3) == "m>="){
+            return card.modColorCost.t >= parseInt(selectionText.substring(3));
+        }
+        if(selectionText.substring(0,2) == "m>"){
+            return card.modColorCost.t > parseInt(selectionText.substring(2));
+        }
+        if(selectionText.substring(0,3) == "m<="){
+            return card.modColorCost.t <= parseInt(selectionText.substring(3));
+        }
+        if(selectionText.substring(0,2) == "m<"){
+            return card.modColorCost.t < parseInt(selectionText.substring(2));
+        }
+        
+        
         return false;
     }
 
@@ -2049,6 +2150,10 @@
 
     // check selection criteria against all cards, apply mod to matching cards.
     function runMod(selectionText, modText){
+        // add quotes if no quotes or selections detected
+        if(!(selectionText.includes('"') || selectionText.includes("=") || selectionText.includes(">") || selectionText.includes("<"))){
+            selectionText = '"' + selectionText + '"';
+        }
         let cardsAffected = 0;
         for(let i = 0; i < deckList.length; i++){
             if(inSelection(deckList[i], selectionText)){
@@ -2089,13 +2194,13 @@
             return;
         }
         if(quoteSplit.length == 3){
-            if(quoteSplit[0].length > 0){
+            if(quoteSplit[0].length > 0 && quoteSplit[0].charAt(0) != "("){
                 addError("modifications", "Warning: Ambiguous quotes in \"" + textLine + "\". If \""+ quoteSplit[1] +"\" is the name of the card, please remove the part before it so it can be recognized");
                 textLine = textLine.replaceAll("\"", "");
                 quoteSplit = "1";
             }
             else{
-                selectionText = quoteSplit[1].trim();
+                selectionText = '"' + quoteSplit[1].trim() + '"';
                 modText = quoteSplit[2].trim();
             }
         }
@@ -2122,7 +2227,15 @@
                 return;
             }
         }
-        
+        if(selectionText.includes("(") && selectionText.split("(").length != selectionText.split(")").length){
+            if(selectionText.split("(").length > selectionText.split(")").length){
+                addError("modifications", "Error in \"" + selectionText + "\": Missing closing )");
+            }
+            if(selectionText.split("(").length < selectionText.split(")").length){
+                addError("modifications", "Error in \"" + selectionText + "\": Missing opening (");
+            }
+            return;
+        }
         runMod(selectionText, modText);
         
         // detect mod
@@ -3223,7 +3336,7 @@
         <div id="modifications">
             <p class="prompt">Modify cards</p>
             <textarea id="modify" rows="5" cols="50"></textarea>
-            <p> If a card name contains () or :, put double quotes around it (i.e. "Summon: Fenrir")<br>
+            <p> If a card name contains "", (), or :, put double quotes around it (i.e. "Summon: Fenrir")<br>
                 To remove an auto-generated mod, only remove the part after the ":"<br>
                 Modification syntax (insert link later)
             </p>
