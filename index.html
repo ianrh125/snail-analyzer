@@ -1979,7 +1979,6 @@
             .replace("cmc", "m")
             .replace("mana", "m")
             .replace("color", "c")
-            .replace("id", "c")
         if(selectionText == "TRUE"){
             return true;
         }
@@ -2003,6 +2002,46 @@
         }
         if(selectionText.substring(0,2) == "m<"){
             return card.modColorCost.t < parseInt(selectionText.substring(2));
+        }
+        if(selectionText.charAt(0) == "c"){
+            let color = selectionText.substring(2);
+            if(color.charAt(2) == '='){
+                color = color.substring(1);
+            }
+            // create bit masks for color combinations
+            let selectColorCode = 
+                color.includes("w")
+                + color.includes("u") * 2
+                + color.includes("b") * 4
+                + color.includes("r") * 8
+                + color.includes("g") * 16;
+            let cost = card.modColorCost
+            let cardColorCode = 
+                Math.min(cost.w + cost.wu + cost.wb + cost.wr + cost.wg, 1)
+                + Math.min(cost.u + cost.wu + cost.ub + cost.ur + cost.ug, 1) * 2
+                + Math.min(cost.b + cost.wb + cost.ub + cost.br + cost.bg, 1) * 4
+                + Math.min(cost.r + cost.wr + cost.ur + cost.br + cost.rg, 1) * 8
+                + Math.min(cost.g + cost.wg + cost.ug + cost.bg + cost.rg, 1) * 16;
+            if(selectionText.substring(0,2) == "c="){
+                // identical bit masks
+                return cardColorCode == selectColorCode;
+            }
+            if(selectionText.substring(0,3) == "c>="){
+                // no colors from outside the card's cost are in the selection
+                return (~cardColorCode & selectColorCode) == 0;
+            }
+            if(selectionText.substring(0,2) == "c>"){
+                // selection does not contain colors outside card, but card contains colors outside selection
+                return ((~cardColorCode & selectColorCode) == 0 && (cardColorCode & ~selectColorCode) > 0);
+            }
+            if(selectionText.substring(0,3) == "c<="){
+                // card contains no colors outside selection
+                return (cardColorCode & ~selectColorCode) == 0;
+            }
+            if(selectionText.substring(0,2) == "c<"){
+                // card contains no colors outside selection, but selection contains colors outside card
+                return ((cardColorCode & ~selectColorCode) == 0 && (~cardColorCode & selectColorCode) > 0);
+            }
         }
         
         
