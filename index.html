@@ -1671,7 +1671,9 @@
             if(!costsCovered.has(commander1.modManaCost)){
                 costsCovered.add(commander1.modManaCost);
             }
-            allCards.push([commander1.name, onCurveRate, avgDelay]);
+            if(commander1.weight > 0){
+                allCards.push([commander1.name, onCurveRate, avgDelay]);
+            }
         }
         if(commander2){
             let weight = document.getElementById("cmdr2-weight").selectedOptions[0].value;
@@ -1685,7 +1687,9 @@
             if(!costsCovered.has(commander2.modManaCost)){
                 costsCovered.add(commander2.modManaCost);
             }
-            allCards.push([commander2.name, onCurveRate, avgDelay]);
+            if(commander2.weight > 0){
+                allCards.push([commander2.name, onCurveRate, avgDelay]);
+            }
         }
         if(commander3){
             let weight = document.getElementById("cmdr3-weight").selectedOptions[0].value;
@@ -1699,7 +1703,9 @@
             if(!costsCovered.has(commander3.modManaCost)){
                 costsCovered.add(commander3.modManaCost);
             }
-            allCards.push([commander3.name, onCurveRate, avgDelay]);
+            if(commander3.weight > 0){
+                allCards.push([commander3.name, onCurveRate, avgDelay]);
+            }
         }
         // do the same for every other card in the deck
         for(let i = 0; i < deckList.length; i++){
@@ -1712,7 +1718,7 @@
                 cmcOnCurve += onCurveRate * cmc * weight;
                 totalCmcDelay += avgDelay * cmc * weight;
                 totalCmc += cmc * weight;
-                if(!costsCovered.has(deckList[i].modManaCost)){
+                if(!costsCovered.has(deckList[i].modManaCost) && deckList[i].weight > 0){
                     costsCovered.add(deckList[i].modManaCost);
                     allCards.push([deckList[i].name, onCurveRate, avgDelay]);
                 }
