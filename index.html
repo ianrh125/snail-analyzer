@@ -1001,6 +1001,10 @@
             .replaceAll(/\s*\[.*\]/gmu, "") // remove anything within squared brackets
             .replaceAll(/\s+\*F\*/gm, "") // remove " *F*"
             .replaceAll(/\s*#.*$/gm, ""); // remove anything after "#"
+
+        if(sanitizedL == ""){
+            return;
+        }
         let splitL = sanitizedL.split("\n");
         let strippedL = "";
         let inSideboard = false;
