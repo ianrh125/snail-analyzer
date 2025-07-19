@@ -2505,8 +2505,8 @@
             let relevantNL = landOverlap - landCount;
             let relevantLands = relevantCards - relevantNL;
             let tapped = 0;
-            if(types[0] == "Elemental"){
-                // handle weird Flamekin Village Interaction
+            if(types[0] == "elemental" || types[0] == "goblin" || types[0] == "elf" || types[0] == "merfolk"){
+                // ignore creature types with both a reveal land and an mdfc
                 relevantLands = 0;
             }
             if(relevantLands == 0 && relevantNL == 0){
