@@ -1483,7 +1483,7 @@
                     landCount += deckList[i].count * typeMult;
                 }
                 // handle more typical sources
-                else if(landIndex != 0 || deckList[i].modManaSource.amt > 0){
+                else if(landIndex != 0 || deckList[i].modManaSource.prod > 0){
                     typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].turn)[x];
                     landTypes[landIndex] += deckList[i].count * typeMult;
                     landCount += deckList[i].count * typeMult;
@@ -2979,14 +2979,14 @@
                 if(!deckList[i].card_type.includes("Land")){
                     if(deckList[i].modColorCost.t > 12){
                         curve[12] += deckList[i].count;
-                        if(deckList[i].modManaSource.amt > 0){
+                        if(deckList[i].modManaSource.prod > 0){
                             ramp[12] += deckList[i].count;
                         }
                         nonland += deckList[i].count;
                     }
                     else{
                         curve[deckList[i].modColorCost.t] += deckList[i].count;
-                        if(deckList[i].modManaSource.amt > 0){
+                        if(deckList[i].modManaSource.prod > 0){
                             ramp[deckList[i].modColorCost.t] += deckList[i].count;
                         }
                         nonland += deckList[i].count;
