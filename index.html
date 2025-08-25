@@ -230,16 +230,21 @@
     var testDict; // map of loaded cards
 
     var landTypes; // array of 32 integers, counting the number of lands producing each subset of the 5 colors
+    var landRamp;
+    var rockTypes;
+    var dorkTypes;
     var landCount; // number of lands in deck
+    var rampCount;
     var iterations; // global count of iterations of recursive functions
     var deckList; // array of cards in deck
     var deckSize; // number of cards in deck
     var loadCount = 0; // number of times the deck loader has been used
 
-    var oneDropDict; // map of mana costs to cast statistics for spells with cmc 1
-    var twoDropDict; // map of mana costs to cast statistics for spells with cmc 2
-    var threeDropDict; // map of mana costs to cast statistics for spells with cmc 3
-    var fourDropDict; // map of mana costs to cast statistics for spells with cmc 4
+    //var oneDropDict; // map of mana costs to cast statistics for spells with cmc 1
+    //var twoDropDict; // map of mana costs to cast statistics for spells with cmc 2
+    //var threeDropDict; // map of mana costs to cast statistics for spells with cmc 3
+    //var fourDropDict; // map of mana costs to cast statistics for spells with cmc 4
+    var xDropDictArr = [];
     var manaDict; // map of mana costs to cast statistics for spells with cmc 5+
 
     var mullLands; // distribution of lands in hand after implementing Frank Karsten's mulligan policy
@@ -273,6 +278,9 @@
     var ignoreCards; // list of cards to be ignored from analysis
     var roundWUBRG = [];
     var landAdded;
+
+    var dorkDecay = 0.8;
+    var rockDecay = 0.9;
 
     var roundTime;
     // staples to automatically discount
@@ -512,6 +520,13 @@
         return myLandTypes;
     }
 
+    function addRamp(myLandTypes){
+        for(let i = 0; i < 32; i++){
+            myLandTypes[i] += dorkTypes[i] + rockTypes[i] + landRamp[i];
+        }
+        return myLandTypes;
+    }
+
     // Given a list of card types or subtypes, search the decklist to find how many match one or more of those types
     function typeSearch(typeList){
         let numFound = 0;
@@ -540,7 +555,7 @@
         if(numColors(cost) == 5 && roundWUBRG.length == 0){
             for(let n = 0; n <= 12; n++){
                 // filter and round lands for given color combination
-                let roundedLands = roundLands(landFilter(condAdjust(n), cost));
+                let roundedLands = roundLands(landFilter(addRamp(condAdjust(n)), cost));
                 roundWUBRG.push(roundedLands);
             }
         }
@@ -560,7 +575,7 @@
                     }
                 }
                 else{
-                    roundedLands = roundLands(landFilter(condAdjust(n), cost));
+                    roundedLands = roundLands(landFilter(addRamp(condAdjust(n)), cost));
                 }
                 let roundedLandCount = sum(roundedLands);
                 result = rLandTest(cost, roundedLands, n, roundedLandCount, 31, 1, structuredClone(comboReqs));
@@ -578,7 +593,7 @@
                     }
                 }
                 else{
-                    roundedLands = roundLands(landFilter(condAdjust(n), cost));
+                    roundedLands = roundLands(landFilter(addRamp(condAdjust(n)), cost));
                 }
                 let roundedLandCount = sum(roundedLands);
                 result = landTestUniformSample(cost, roundedLands, n, roundedLandCount, 31, 0, approxSamples, structuredClone(comboReqs));
@@ -591,7 +606,7 @@
     // Calculate the distribution of # of lands in hand after the player mulligans.
     // Follows Frank Karsten's mulligan logic from his 2022 "How many sources?" article.
     function calcMullLands(){
-        let myLandCount = Math.round(landCount);
+        let myLandCount = Math.round(landCount + rampCount);
         let openingDist = new Array(8);
         let mullDist = new Array(8);
         mullLands = new Array(8).fill(0);
@@ -675,13 +690,30 @@
         // only keep after 4
     }
 
-    // Find the distribution of lands drawn by a given turn, factoring in mulligans
-    function landsAtTurn(turn){
+    function addRampToOpeningHand(myMullDist, ramp){
         let myLandCount = Math.round(landCount);
+        for(let i = 6; i >= 0; i--){
+            let landSlice = myMullDist[i];
+            myMullDist[i] = 0;
+            for(let j = 0; j <= 7-i; j++){
+                myMullDist[i + j] += landSlice * drawType(deckSize - myLandCount, ramp, 7-i, j);
+            }
+        }
+        return myMullDist;
+    }
+
+    // Find the distribution of lands drawn by a given turn, factoring in mulligans
+    function landsAtTurn(turn, ramp){
+        let myLandCount = Math.round(landCount + ramp);
+        let myMullDist = addRampToOpeningHand(mullLands.slice(), Math.round(ramp));
+        if(!ramp){
+            myLandCount = Math.round(landCount + rampCount);
+            myMullDist = addRampToOpeningHand(mullLands.slice(), Math.round(rampCount));
+        }
         let landDist = new Array(13).fill(0);
         for(let startLands = 0; startLands < 7; startLands++){
             for(let drawnLands = 0; drawnLands <= turn; drawnLands++){
-                landDist[Math.min(startLands + drawnLands, 12)] += mullLands[startLands] * drawType(deckSize-7, myLandCount - startLands, turn, drawnLands);
+                landDist[Math.min(startLands + drawnLands, 12)] += myMullDist[startLands] * drawType(deckSize-7, myLandCount - startLands, turn, drawnLands);
             }
         }
         return landDist;
@@ -808,23 +840,7 @@
 
     // Using the stored pipdist dictionaries, get the distribution of how many lands are required to cast a spell
     function landsToCast(cost, turn){
-        let pipReqs = [];
-        if(cost.t == 1){
-            pipReqs = oneDropDict.get(pipsToNum(cost)).slice();
-        }
-        else if(cost.t == 2){
-            pipReqs = twoDropDict.get(pipsToNum(cost)).slice();
-        }
-        else if(cost.t == 3){
-            pipReqs = threeDropDict.get(pipsToNum(cost)).slice();
-        }
-        else if(cost.t == 4){
-            pipReqs = fourDropDict.get(pipsToNum(cost)).slice();
-        }
-        else{
-            let numfromPips = pipsToNum(cost)
-            pipReqs = manaDict.get(numfromPips).slice();
-        }
+        let pipReqs = xDropDictArr[cost.t].get(pipsToNum(cost)).slice();
         for(let i = 0; i < cost.t; i++){
             pipReqs[i] = 0;
         }
@@ -854,7 +870,7 @@
     }
 
     // using the distributions of how many lands are required to cast a given spell and how many are available at a given turn, find the pdf on casting a spell on turns 1-12
-    function turnsToCast(cost, turn){
+    function turnsToCast(cost, turn, ramp){
         let landReqs = landsToCast(cost, turn);
         let canCast = new Array(16);
         for(let i = 0; i < turn; i++){
@@ -863,7 +879,7 @@
         // iterate through turns ranging from the first turn where it becomes possible to the last turn we consider
         for(let i = turn; i <= 15; i++){
             let pCast = 0;
-            let landDist = landsAtTurn(i);
+            let landDist = landsAtTurn(i, ramp);
             for(let lands = cost.t; lands <= 12; lands++){
                 pCast += landReqs[lands] * landDist[lands];
             }
@@ -1421,6 +1437,15 @@
     // Find all spells with a given mana value, get the cast distribution for their color pips, and put it into a map
     function xDropDict(x){
         let dict = new Map();
+        if(commander1){
+            deckList.push(commander1);
+        }
+        if(commander2){
+            deckList.push(commander2);
+        }
+        if(commander3){
+            deckList.push(commander3);
+        }
         for(let i = 0; i < deckList.length; i++){
             // run the numbers for cards with a relevant mana cost
             if(deckList[i].modColorCost.t - deckList[i].discount == x){
@@ -1443,6 +1468,15 @@
                 }
             }
         }
+        if(commander1){
+            deckList.pop();
+        }
+        if(commander2){
+            deckList.pop();
+        }
+        if(commander3){
+            deckList.pop();
+        }
         return dict;
     }
 
@@ -1450,43 +1484,78 @@
     function scanForSources(x){
         for(let i = 0; i < deckList.length; i++){
             // make sure mana value lines up
-            if(deckList[i].modColorCost.t - deckList[i].discount == x && !(deckList[i].card_type.includes("//") && deckList[i].card_type.includes("Land"))){
-                let landIndex = findLandIndex(deckList[i].modManaSource);
-                let typeMult = 1;
-                // penalize more fragile permanent types
-                if(deckList[i].card_type.includes("Artifact")){
-                    typeMult = 0.75;
-                }
-                if(deckList[i].card_type.includes("Creature")){
-                    typeMult = 0.5;
-                }
+            if(deckList[i].modColorCost.t - deckList[i].discount == x && !(deckList[i].card_type.includes("Land"))){
+                let mana = deckList[i].modManaSource;
+                let landIndex = findLandIndex(mana);
+                let multiplier = turnsToCast(deckList[i].modColorCost, deckList[i].turn)[x] * deckList[i].count;
                 // handle fetches
-                if(deckList[i].modManaSource.fetch){
-                    let addLandTypes = getFetchEquivalent(deckList[i].modManaSource);
+                if(mana.fetch){
+                    let addLandTypes = getFetchEquivalent(mana);
                     for(let j = 0; j < 32; j++){
-                        landTypes[j] += addLandTypes[j] * deckList[i].count * typeMult;
+                        landRamp[j] += addLandTypes[j] * multiplier * mana.ramp;
+                        landTypes[j] += addLandTypes[j] * multiplier * (mana.prod - mana.ramp);
                     }
-                    landCount += deckList[i].count * typeMult;
+                    rampCount += multiplier * mana.ramp;
+                    landCount += multiplier * (mana.prod - mana.ramp);
                 }
                 // "choose a color" type mana sources (thriving, CLB gates)
-                else if(deckList[i].modManaSource.choose){
+                else if(mana.choose){
                     let deckColors = Math.sign(white) + Math.sign(blue) * 2 + Math.sign(black) * 4 + Math.sign(red) * 8 + Math.sign(green) * 16;
-                    landIndex = findLandIndex(deckList[i].modManaSource) & deckColors;
+                    landIndex = findLandIndex(mana) & deckColors;
                     let chooseIndex = deckColors & (~landIndex);
                     let numColors = Math.sign(chooseIndex & 1) + Math.sign(chooseIndex & 2) + Math.sign(chooseIndex & 4) + Math.sign(chooseIndex & 8) + Math.sign(chooseIndex & 16);
-                    landTypes[chooseIndex | landIndex] += 0.5 * typeMult;
-                    for(let j = 1; j < 32; j *= 2){
-                        if(j & chooseIndex){
-                            landTypes[j | landIndex] += 1/(2*numColors) * typeMult;
+                    if(deckList[i].card_type.includes("Creature")){
+                        dorkTypes[chooseIndex | landIndex] += 0.5 * multiplier * mana.ramp;
+                        landTypes[chooseIndex | landIndex] += 0.5 * multiplier * (mana.prod - mana.ramp);
+                        for(let j = 1; j < 32; j *= 2){
+                            if(j & chooseIndex){
+                                dorkTypes[j | landIndex] += 1/(2*numColors) * multiplier * mana.ramp;
+                                landTypes[j | landIndex] += 1/(2*numColors) * multiplier * (mana.prod - mana.ramp);
+                            }
                         }
                     }
-                    landCount += deckList[i].count * typeMult;
+                    else if(deckList[i].card_type.includes("Artifact")){
+                        rockTypes[chooseIndex | landIndex] += 0.5 * multiplier * mana.ramp;
+                        landTypes[chooseIndex | landIndex] += 0.5 * multiplier * (mana.prod - mana.ramp);
+                        for(let j = 1; j < 32; j *= 2){
+                            if(j & chooseIndex){
+                                rockTypes[j | landIndex] += 1/(2*numColors) * multiplier * mana.ramp;
+                                landTypes[j | landIndex] += 1/(2*numColors) * multiplier * (mana.prod - mana.ramp);
+                            }
+                        }
+                    }
+                    else{
+                        landRamp[chooseIndex | landIndex] += 0.5 * multiplier * mana.ramp;
+                        landTypes[chooseIndex | landIndex] += 0.5 * multiplier * (mana.prod - mana.ramp);
+                        for(let j = 1; j < 32; j *= 2){
+                            if(j & chooseIndex){
+                                landRamp[j | landIndex] += 1/(2*numColors) * multiplier * mana.ramp;
+                                landTypes[j | landIndex] += 1/(2*numColors) * multiplier * (mana.prod - mana.ramp);
+                            }
+                        }
+                    }
+                    rampCount += multiplier * mana.ramp;
+                    landCount += multiplier * (mana.prod - mana.ramp);
                 }
                 // handle more typical sources
-                else if(landIndex != 0 || deckList[i].modManaSource.prod > 0){
-                    typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].turn)[x];
-                    landTypes[landIndex] += deckList[i].count * typeMult;
-                    landCount += deckList[i].count * typeMult;
+                else if(landIndex != 0 || mana.prod > 0){
+                    // penalize more fragile permanent types
+                    if(deckList[i].card_type.includes("Creature")){
+                        dorkTypes[landIndex] += multiplier * mana.ramp;
+                        landTypes[landIndex] += multiplier * (mana.prod - mana.ramp);
+                    }
+                    else if(deckList[i].card_type.includes("Artifact")){
+                        rockTypes[landIndex] += multiplier * mana.ramp;
+                        landTypes[landIndex] += multiplier * (mana.prod - mana.ramp);
+                    }
+                    else{
+                        typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].turn)[x];
+                        landRamp[landIndex] += multiplier * mana.ramp;
+                        landTypes[landIndex] += multiplier * (mana.prod - mana.ramp);
+                        
+                    }
+                    rampCount += multiplier * mana.ramp;
+                    landCount += multiplier * (mana.prod - mana.ramp);
                 }
             }
             // factor in landcycling
@@ -1519,136 +1588,33 @@
         return costOut;
     }
 
+    function rampDecayTurn(){
+        for(let i = 0; i < 32; i++){
+            rampCount -= rockTypes[i] * (1-rockDecay);
+            rampCount -= dorkTypes[i] * (1-dorkDecay);
+            rockTypes[i] *= rockDecay;
+            dorkTypes[i] *= dorkDecay;
+        }
+        let auditRampCount = sum(dorkTypes) + sum(rockTypes) + sum(landRamp);
+    }
     // batching all those little functions up into one big "run the analysis" function
     // short for Deep Analysis. Snail is aware of this abbreviation and thinks it is funny. I would not use it otherwise
     function deepAnal(individualResults){
         let textOut = "";
         manaDict = new Map();
-        // simulate mulligans to get a starting distribution of lands in the opening hand
+        rampCount = 0;
+        landRamp = new Array(32).fill(0);
+        rockTypes = new Array(32).fill(0);
+        dorkTypes = new Array(32).fill(0);
+        xDropDictArr = [];
+        let rampTurns = [];
         calcMullLands();
 
-        // calculate for one drops based on mana from lands
-        oneDropDict = xDropDict(1);
-
-        // scan one drops for mana sources
-        scanForSources(1);
-        // reflect newly identified sources in post-mulligan distribution
-        calcMullLands();
-
-        // calculate for two drops based on mana from lands and one drops
-        twoDropDict = xDropDict(2);
-
-        // scan two drops for mana sources
-        scanForSources(2);
-        calcMullLands();
-
-        // repeat for three and four drops
-        threeDropDict = xDropDict(3);
-        scanForSources(3);
-        calcMullLands();
-
-        fourDropDict = xDropDict(4);
-        scanForSources(4);
-        calcMullLands();
-
-        // calculate for 4 and above based on lands, 1, 2, and 3
-        for(let i = 0; i < deckList.length; i++){
-
-            let pips = colorReqs(deckList[i].modColorCost);
-            let pipCode = pipsToNum(pips);
-            if(!manaDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                manaDict.set(pipCode, castDistro.slice());
-            }
-        }
-        // calculate for commanders
-        if(commander1){
-            let pips = colorReqs(commander1.modColorCost);
-            let pipCode = pipsToNum(pips);
-            if(commander1.modColorCost.t - commander1.discount == 1 && !oneDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                oneDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(commander1.modColorCost.t - commander1.discount == 2 && !twoDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                twoDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(commander1.modColorCost.t - commander1.discount == 3 && !threeDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                threeDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(commander1.modColorCost.t - commander1.discount == 4 && !fourDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                fourDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(!manaDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                manaDict.set(pipCode, castDistro.slice());
-            }
-        }
-        if(commander2){
-            let pips = colorReqs(commander2.modColorCost);
-            let pipCode = pipsToNum(pips);
-            if(commander2.modColorCost.t - commander2.discount == 1 && !oneDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                oneDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(commander2.modColorCost.t - commander2.discount == 2 && !twoDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                twoDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(commander2.modColorCost.t - commander2.discount == 3 && !threeDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                threeDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(commander2.modColorCost.t - commander2.discount == 4 && !fourDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                fourDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(!manaDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                manaDict.set(pipCode, castDistro.slice());
-            }
-        }
-        if(commander3){
-            let pips = colorReqs(commander3.modColorCost);
-            let pipCode = pipsToNum(pips);
-            if(commander3.modColorCost.t - commander3.discount == 1 && !oneDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                oneDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(commander3.modColorCost.t - commander3.discount == 2 && !twoDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                twoDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(commander3.modColorCost.t - commander3.discount == 3 && !threeDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                threeDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(commander3.modColorCost.t - commander3.discount == 4 && !fourDropDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                fourDropDict.set(pipCode, castDistro.slice());
-            }
-            else if(!manaDict.has(pipCode)){
-                iterations = 0;
-                castDistro = pipDist(pips);
-                manaDict.set(pipCode, castDistro.slice());
-            }
+        for(let i = 0; i <= 12; i++){
+            rampTurns.push(rampCount); // record how much ramp is available
+            xDropDictArr.push(xDropDict(i)); // record availability of color sources on this turn
+            scanForSources(i); // detect ramp spells
+            rampDecayTurn(); // account for destruction of dorks/rocks
         }
         // now that all of the mana values are calculated for and added to the dictionary, add up all the relevant info and return it
         let costsCovered = new Set();
@@ -1660,7 +1626,7 @@
         if(commander1){
             let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
             // get the distribution to afford the commander's mana cost
-            let turnCastDist = turnsToCast(commander1.modColorCost, commander1.turn);
+            let turnCastDist = turnsToCast(commander1.modColorCost, commander1.turn, rampTurns[commander1.turn]);
             // use it to calculate how often it's played on time, and how late it generally gets played
             let onCurveRate = turnCastDist[commander1.turn];
             let avgDelay = mean(turnCastDist) - commander1.turn;
@@ -1677,7 +1643,7 @@
         }
         if(commander2){
             let weight = document.getElementById("cmdr2-weight").selectedOptions[0].value;
-            let turnCastDist = turnsToCast(commander2.modColorCost, commander2.turn)
+            let turnCastDist = turnsToCast(commander2.modColorCost, commander2.turn, rampTurns[commander2.turn])
             let onCurveRate = turnCastDist[commander2.turn];
             let avgDelay = mean(turnCastDist) - commander2.turn;
             let cmc = Math.min(commander2.modColorCost.t, 12);
@@ -1693,7 +1659,7 @@
         }
         if(commander3){
             let weight = document.getElementById("cmdr3-weight").selectedOptions[0].value;
-            let turnCastDist = turnsToCast(commander3.modColorCost, commander3.turn);
+            let turnCastDist = turnsToCast(commander3.modColorCost, commander3.turn, rampTurns[commander3.turn]);
             let onCurveRate = turnCastDist[commander3.turn];
             let avgDelay = mean(turnCastDist) - commander3.turn;
             let cmc = Math.min(commander3.modColorCost.t, 12);
@@ -1711,7 +1677,7 @@
         for(let i = 0; i < deckList.length; i++){
             if((!deckList[i].card_type.includes("Land") || (deckList[i].card_type.includes("//") && !(deckList[i].card_type == "Land // Land"))) && !deckList[i].ignore){
                 let weight = deckList[i].weight;
-                let turnCastDist = turnsToCast(deckList[i].modColorCost, deckList[i].turn);
+                let turnCastDist = turnsToCast(deckList[i].modColorCost, deckList[i].turn, rampTurns[deckList[i].turn]);
                 let cmc = Math.min(deckList[i].modColorCost.t, 12);
                 let onCurveRate = turnCastDist[deckList[i].turn];
                 let avgDelay = mean(turnCastDist) - deckList[i].turn;
