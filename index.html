@@ -223,6 +223,15 @@
         display: block;
     }
 
+    .hover-text {
+        display: none;
+    }
+
+    .on-hover:hover + .hover-text{
+        color: red;
+        display: block;
+    }
+
     </style>
 </head>
 <body onload="disableButton()">
@@ -606,7 +615,7 @@
     // Calculate the distribution of # of lands in hand after the player mulligans.
     // Follows Frank Karsten's mulligan logic from his 2022 "How many sources?" article.
     function calcMullLands(){
-        let myLandCount = Math.round(landCount + rampCount);
+        let myLandCount = Math.round(landCount);
         let openingDist = new Array(8);
         let mullDist = new Array(8);
         mullLands = new Array(8).fill(0);
@@ -870,18 +879,45 @@
     }
 
     // using the distributions of how many lands are required to cast a given spell and how many are available at a given turn, find the pdf on casting a spell on turns 1-12
-    function turnsToCast(cost, turn, ramp){
+    function turnsToCast(cost, turn, ramp, negativeDelay){
         let landReqs = landsToCast(cost, turn);
+        let myLandCount = Math.round(landCount);
         let canCast = new Array(16);
         for(let i = 0; i < turn; i++){
             canCast[i] = 0;
         }
+        let start = turn;
+        if(negativeDelay){
+            start = Math.round(cost.t / 2);
+        }
         // iterate through turns ranging from the first turn where it becomes possible to the last turn we consider
-        for(let i = turn; i <= 15; i++){
+        for(let i = start; i <= 15; i++){
             let pCast = 0;
-            let landDist = landsAtTurn(i, ramp);
+            let rampAtTurn;
+            let remainder = 0;
+            if(i < ramp.length){
+                rampAtTurn = Math.floor(ramp[i]);
+                remainder = ramp[i] % 1;
+            }
+            else{
+                rampAtTurn = Math.floor(ramp[ramp.length - 1]);
+                remainder = ramp[ramp.length - 1] % 1;
+            }
+            let landDist = new Array(13).fill(0);
+            let dist1 = landsAtTurn(i, rampAtTurn);
+            let dist2 = landsAtTurn(i, rampAtTurn + 1);
+            for(let i = 0; i < 13; i++){
+                landDist[i] = dist1[i] * (1-remainder) + dist2[i] * remainder;
+            }
+            //landDist += landsAtTurn(i, rampAtTurn) * (1 - remainder);
+            //landDist += landsAtTurn(i, rampAtTurn + 1) * remainder;
             for(let lands = cost.t; lands <= 12; lands++){
-                pCast += landReqs[lands] * landDist[lands];
+                let rampMult = 1;
+                if(i < cost.t){
+                    rampMult = drawTypeMin(myLandCount + rampAtTurn, rampAtTurn, lands, cost.t - i) * (1 - remainder) + drawTypeMin(myLandCount + rampAtTurn + 1, rampAtTurn + 1, lands, cost.t - i) * remainder;
+                    console.log(rampMult);
+                }
+                pCast += landReqs[lands] * landDist[lands] * rampMult;
             }
             canCast[i] = pCast
         }
@@ -1481,13 +1517,13 @@
     }
 
     // Find all spells of a given mana value that act as a mana source or gain one through other means
-    function scanForSources(x){
+    function scanForSources(x, ramp){
         for(let i = 0; i < deckList.length; i++){
             // make sure mana value lines up
             if(deckList[i].modColorCost.t - deckList[i].discount == x && !(deckList[i].card_type.includes("Land"))){
                 let mana = deckList[i].modManaSource;
                 let landIndex = findLandIndex(mana);
-                let multiplier = turnsToCast(deckList[i].modColorCost, deckList[i].turn)[x] * deckList[i].count;
+                let multiplier = turnsToCast(deckList[i].modColorCost, deckList[i].turn, ramp, false)[x] * deckList[i].count;
                 // handle fetches
                 if(mana.fetch){
                     let addLandTypes = getFetchEquivalent(mana);
@@ -1549,7 +1585,7 @@
                         landTypes[landIndex] += multiplier * (mana.prod - mana.ramp);
                     }
                     else{
-                        typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].turn)[x];
+                        typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].turn, ramp, false)[x];
                         landRamp[landIndex] += multiplier * mana.ramp;
                         landTypes[landIndex] += multiplier * (mana.prod - mana.ramp);
                         
@@ -1561,7 +1597,7 @@
             // factor in landcycling
             else if(deckList[i].modManaSource.cycling != false && getColorCost(deckList[i].modManaSource.cycling.cost).t == x){
                 if(deckList[i].modManaSource.cycling.lands != false){
-                    let typeMult = turnsToCast(getColorCost(deckList[i].modManaSource.cycling.cost), 0)[x];
+                    let typeMult = turnsToCast(getColorCost(deckList[i].modManaSource.cycling.cost), 0, ramp, false)[x];
                     let addLandTypes = getFetchEquivalent(deckList[i].modManaSource.cycling.lands);
                     for(let j = 0; j < 32; j++){
                         landTypes[j] += addLandTypes[j] * deckList[i].count * typeMult;
@@ -1599,7 +1635,7 @@
     }
     // batching all those little functions up into one big "run the analysis" function
     // short for Deep Analysis. Snail is aware of this abbreviation and thinks it is funny. I would not use it otherwise
-    function deepAnal(individualResults){
+    function deepAnal(individualResults, negativeDelay, addRock){
         let textOut = "";
         manaDict = new Map();
         rampCount = 0;
@@ -1608,12 +1644,21 @@
         dorkTypes = new Array(32).fill(0);
         xDropDictArr = [];
         let rampTurns = [];
+
         calcMullLands();
 
         for(let i = 0; i <= 12; i++){
             rampTurns.push(rampCount); // record how much ramp is available
             xDropDictArr.push(xDropDict(i)); // record availability of color sources on this turn
-            scanForSources(i); // detect ramp spells
+            scanForSources(i, rampTurns); // detect ramp spells
+            if(i == 2 && addRock == 1){
+                rockTypes[31]++;
+                rampCount++;
+            }
+            else if(i == 2 && addRock == 2){
+                dorkTypes[31]++;
+                rampCount++;
+            }
             rampDecayTurn(); // account for destruction of dorks/rocks
         }
         // now that all of the mana values are calculated for and added to the dictionary, add up all the relevant info and return it
@@ -1626,9 +1671,12 @@
         if(commander1){
             let weight = document.getElementById("cmdr1-weight").selectedOptions[0].value;
             // get the distribution to afford the commander's mana cost
-            let turnCastDist = turnsToCast(commander1.modColorCost, commander1.turn, rampTurns[commander1.turn]);
+            let turnCastDist = turnsToCast(commander1.modColorCost, commander1.turn, rampTurns, negativeDelay);
             // use it to calculate how often it's played on time, and how late it generally gets played
             let onCurveRate = turnCastDist[commander1.turn];
+            if(negativeDelay){
+                onCurveRate = sum(turnCastDist.slice(0, commander1.turn + 1));
+            }
             let avgDelay = mean(turnCastDist) - commander1.turn;
             let cmc = Math.min(commander1.modColorCost.t, 12);
             cmcOnCurve += onCurveRate * cmc * weight;
@@ -1643,8 +1691,11 @@
         }
         if(commander2){
             let weight = document.getElementById("cmdr2-weight").selectedOptions[0].value;
-            let turnCastDist = turnsToCast(commander2.modColorCost, commander2.turn, rampTurns[commander2.turn])
+            let turnCastDist = turnsToCast(commander2.modColorCost, commander2.turn, rampTurns, negativeDelay)
             let onCurveRate = turnCastDist[commander2.turn];
+            if(negativeDelay){
+                onCurveRate = sum(turnCastDist.slice(0, commander2.turn + 1));
+            }
             let avgDelay = mean(turnCastDist) - commander2.turn;
             let cmc = Math.min(commander2.modColorCost.t, 12);
             cmcOnCurve += onCurveRate * cmc * weight;
@@ -1659,8 +1710,11 @@
         }
         if(commander3){
             let weight = document.getElementById("cmdr3-weight").selectedOptions[0].value;
-            let turnCastDist = turnsToCast(commander3.modColorCost, commander3.turn, rampTurns[commander3.turn]);
+            let turnCastDist = turnsToCast(commander3.modColorCost, commander3.turn, rampTurns, negativeDelay);
             let onCurveRate = turnCastDist[commander3.turn];
+            if(negativeDelay){
+                onCurveRate = sum(turnCastDist.slice(0, commander3.turn + 1));
+            }
             let avgDelay = mean(turnCastDist) - commander3.turn;
             let cmc = Math.min(commander3.modColorCost.t, 12);
             cmcOnCurve += onCurveRate * cmc * weight;
@@ -1677,9 +1731,12 @@
         for(let i = 0; i < deckList.length; i++){
             if((!deckList[i].card_type.includes("Land") || (deckList[i].card_type.includes("//") && !(deckList[i].card_type == "Land // Land"))) && !deckList[i].ignore){
                 let weight = deckList[i].weight;
-                let turnCastDist = turnsToCast(deckList[i].modColorCost, deckList[i].turn, rampTurns[deckList[i].turn]);
+                let turnCastDist = turnsToCast(deckList[i].modColorCost, deckList[i].turn, rampTurns, negativeDelay);
                 let cmc = Math.min(deckList[i].modColorCost.t, 12);
                 let onCurveRate = turnCastDist[deckList[i].turn];
+                if(negativeDelay){
+                    onCurveRate = sum(turnCastDist.slice(0, deckList[i].turn + 1));
+                }
                 let avgDelay = mean(turnCastDist) - deckList[i].turn;
                 cmcOnCurve += onCurveRate * cmc * weight;
                 totalCmcDelay += avgDelay * cmc * weight;
@@ -1702,7 +1759,7 @@
     }
 
     // Change the manabase and run the analysis again to see how that changes the results.
-    function testVariant(name, landDiff, baseRate, baseDelay){
+    function testVariant(name, landDiff, baseRate, baseDelay, negativeDelay, addRock){
         landAdded = landDiff.slice();
         // back up global variables and make specified changes
         let landCountBackup = landCount;
@@ -1712,7 +1769,7 @@
             landTypes[i] += landDiff[i];
         }
         // run the analysis and compare results
-        let analResult = deepAnal();
+        let analResult = deepAnal(false, negativeDelay, addRock);
         let newRate = analResult[0] - baseRate;
         let newDelay = analResult[1] - baseDelay;
         let rateText;
@@ -2281,6 +2338,7 @@
         var textType = Node.textContent ? 'textContent' : 'innerText',
         L = document.getElementById('decklist').value,
         result = document.getElementById('color-analyzer-result');
+        let negativeDelay = document.getElementById('negative-delay').checked;
 
         approxColors = parseFloat(document.getElementById('approx-colors').value) || 5;
         approxSamples = parseFloat(document.getElementById('approx-samples').value) || 100000;
@@ -2406,7 +2464,7 @@
         table.appendChild(tableRow(["Manabase Variation", "Cast Rate", "Average Delay"], "th", ["","",""]));
 
         // run analysis on base deck
-        let analResult = deepAnal(true);
+        let analResult = deepAnal(true, negativeDelay);
         let baseRate = analResult[0];
         let baseDelay = analResult[1];
         let allCards = analResult[2];
@@ -2483,7 +2541,7 @@
         landTypes = landTypesBackup;
 
         // calculate for +1 wastes variant
-        let wastesVariant = testVariant("+1 Wastes", createDiff([[0, 1]]), baseRate, baseDelay);
+        let wastesVariant = testVariant("+1 Wastes", createDiff([[0, 1]]), baseRate, baseDelay, negativeDelay);
         genericBoost = -parseFloat(wastesVariant[2].substring(0,6));
         table.appendChild(tableRow(wastesVariant, "td", ["", "table-num", "table-num"]));
         let maxBoost = genericBoost;
@@ -2491,7 +2549,7 @@
         let maxLand = "Wastes";
         // calculate for variants with all the colors present in the deck
         if(white > 0){
-            let plainsVariant = testVariant("+1 Plains", createDiff([[1, 1]]), baseRate, baseDelay);
+            let plainsVariant = testVariant("+1 Plains", createDiff([[1, 1]]), baseRate, baseDelay, negativeDelay);
             whiteBoost = -parseFloat(plainsVariant[2].substring(0,6));
             if(whiteBoost > maxBoost){
                 maxBoost = whiteBoost;
@@ -2501,7 +2559,7 @@
             table.appendChild(tableRow(plainsVariant, "td", ["", "table-num", "table-num"]));
         }
         if(blue > 0){
-            let islandVariant = testVariant("+1 Island", createDiff([[2, 1]]), baseRate, baseDelay);
+            let islandVariant = testVariant("+1 Island", createDiff([[2, 1]]), baseRate, baseDelay, negativeDelay);
             blueBoost = -parseFloat(islandVariant[2].substring(0,6));
             if(blueBoost > maxBoost){
                 maxBoost = blueBoost;
@@ -2511,7 +2569,7 @@
                 table.appendChild(tableRow(islandVariant, "td", ["", "table-num", "table-num"]));
             }
             if(black > 0){
-                let swampVariant = testVariant("+1 Swamp", createDiff([[4, 1]]), baseRate, baseDelay);
+                let swampVariant = testVariant("+1 Swamp", createDiff([[4, 1]]), baseRate, baseDelay, negativeDelay);
                 blackBoost = -parseFloat(swampVariant[2].substring(0,6));
                 if(blackBoost > maxBoost){
                     maxBoost = blackBoost;
@@ -2521,7 +2579,7 @@
                 table.appendChild(tableRow(swampVariant, "td", ["", "table-num", "table-num"]));
             }
             if(red > 0){
-                let mountainVariant = testVariant("+1 Mountain", createDiff([[8, 1]]), baseRate, baseDelay);
+                let mountainVariant = testVariant("+1 Mountain", createDiff([[8, 1]]), baseRate, baseDelay, negativeDelay);
                 redBoost = -parseFloat(mountainVariant[2].substring(0,6));
                 if(redBoost > maxBoost){
                     maxBoost = redBoost;
@@ -2531,7 +2589,7 @@
                 table.appendChild(tableRow(mountainVariant, "td", ["", "table-num", "table-num"]));
             }
             if(green > 0){
-                let forestVariant = testVariant("+1 Forest", createDiff([[16, 1]]), baseRate, baseDelay);
+                let forestVariant = testVariant("+1 Forest", createDiff([[16, 1]]), baseRate, baseDelay, negativeDelay);
                 greenBoost = -parseFloat(forestVariant[2].substring(0,6));
                 if(greenBoost > maxBoost){
                     maxBoost = greenBoost;
@@ -2540,6 +2598,29 @@
                 }
                 table.appendChild(tableRow(forestVariant, "td", ["", "table-num", "table-num"]));
             }
+            if(deckColors > 1){
+                let towerVariant = testVariant("+1 Command Tower", createDiff([[31, 1]]), baseRate, baseDelay, negativeDelay);
+                wubrgBoost = -parseFloat(towerVariant[2].substring(0,6));
+                maxBoost = wubrgBoost;
+                /*if(greenBoost > maxBoost){
+                    maxBoost = greenBoost;
+                    maxColor = "green";
+                    maxLand = "Forest";
+                }*/
+                table.appendChild(tableRow(towerVariant, "td", ["", "table-num", "table-num"]));
+            }
+            
+            let rockVariant = testVariant("+1 Arcane Signet", createDiff([]), baseRate, baseDelay, negativeDelay, 1);
+            let rockBoost = -parseFloat(rockVariant[2].substring(0,6));
+            table.appendChild(tableRow(rockVariant, "td", ["", "table-num", "table-num"]));
+
+            let dorkVariant = testVariant("+1 Ornithopter of Paradise", createDiff([]), baseRate, baseDelay, negativeDelay, 2);
+            let dorkBoost = -parseFloat(dorkVariant[2].substring(0,6));
+            table.appendChild(tableRow(dorkVariant, "td", ["", "table-num", "table-num"]));
+
+            /*let fetchVariant = testVariant("+1 rampant growth", createDiff([]), baseRate, baseDelay, negativeDelay, 3);
+            let fetchBoost = -parseFloat(fetchVariant[2].substring(0,6));
+            table.appendChild(tableRow(fetchVariant, "td", ["", "table-num", "table-num"]));*/
 
             // create table for tainted and verge lands if needed
             landCount = landCountBackup;
@@ -3344,6 +3425,11 @@
     </div>
     <div class="analyzer" name="modifier">
         <p class="title">Settings & Card Modifications</p>
+        <div class="on-hover">
+            <input type="checkbox" id="negative-delay" name="negative-delay" value="Negative Delay">
+            <label for="consider-ramp">Treat ramp as negative delay</label><br>
+        </div>
+        <div class="hover-text">Warning: This can mask the problems in a manabase. If you want to ramp every game, consider using the other settings to specify that</div>
         <div id="modifications">
             <p class="prompt">Modify cards</p>
             <textarea id="modify" rows="5" cols="50"></textarea>
