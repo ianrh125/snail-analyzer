@@ -291,8 +291,8 @@
     var roundWUBRG = [];
     var landAdded;
 
-    var dorkDecay = 0.8;
-    var rockDecay = 0.9;
+    var dorkDecay;
+    var rockDecay;
 
     var roundTime;
     // staples to automatically discount
@@ -1086,6 +1086,7 @@
             }
         }
 
+        // if cut off by character limit, start over again to load the rest
         if(strippedL.length >= 1900){
             loadDict();
             return;
@@ -2371,6 +2372,11 @@
         let redBoost;
         let greenBoost;
 
+        // load information on ramp decay
+        let decay = document.getElementById("ramp-decay").selectedOptions[0].value;
+        dorkDecay = 1 - decay;
+        rockDecay = 1 - decay/2;
+
         let startTime = Date.now();
         landAdded = new Array(32).fill(0);
         // reset discount and ignore status
@@ -2616,15 +2622,10 @@
                 }
                 table.appendChild(tableRow(forestVariant, "td", ["", "table-num", "table-num"]));
             }
+            let wubrgBoost = maxBoost;
             if(deckColors > 1){
                 let towerVariant = testVariant("+1 Command Tower", createDiff([[31, 1]]), baseRate, baseDelay, negativeDelay);
                 wubrgBoost = -parseFloat(towerVariant[2].substring(0,6));
-                maxBoost = wubrgBoost;
-                /*if(greenBoost > maxBoost){
-                    maxBoost = greenBoost;
-                    maxColor = "green";
-                    maxLand = "Forest";
-                }*/
                 table.appendChild(tableRow(towerVariant, "td", ["", "table-num", "table-num"]));
             }
 
@@ -2718,10 +2719,10 @@
                 descriptionText += "<strong>struggling</strong>";
             }
             descriptionText += ", playing your spells <strong>" + (baseDelay.toFixed(2)) + "</strong> turns late on average.<br>";
-            descriptionText += "<strong>" + Math.round(100 * Math.max(genericBoost,0) / maxBoost) + "%</strong> of this delay is due to your land count, while <strong>"
-                + Math.round(100 * (1-Math.max(genericBoost,0) / maxBoost)) + "%</strong> is due to your mana colors.<br>";
+            descriptionText += "<strong>" + Math.round(100 * Math.max(genericBoost,0) / wubrgBoost) + "%</strong> of this delay is due to your land count, while <strong>"
+                + Math.round(100 * (1-Math.max(genericBoost,0) / wubrgBoost)) + "%</strong> is due to your mana colors.<br>";
             descriptionText += "Your weakest color is <strong>" + maxColor + "</strong>.<br>";
-            descriptionText += "Adding an extra " + maxLand + " would eliminate <strong>" + Math.round(100 * maxBoost / baseDelay) + "%</strong> of this delay.";
+            descriptionText += "Adding an extra " + maxLand + " would eliminate <strong>" + Math.round(100 * maxBoost / baseDelay) + "%</strong> of this delay.<br>";
             result.innerHTML = descriptionText;
             document.getElementById("color-analyzer-result-box").appendChild(result);
 
@@ -3374,7 +3375,7 @@
             <label for="commander" class="prompt">How important is your commander to your deck?</label>
             <select name="commander" id="cmdr1-weight">
                 <option value="10">Just another card (10x weight)</option>
-                <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option>
+                <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option selected="selected">
                 <option value="30">A major boost for a deck that would struggle without it (30x weight)</option>
                 <option value="50">A critical piece of a deck that would fall flat without it (50x weight)</option>
             </select>
@@ -3387,7 +3388,7 @@
             <label for="partner" class="prompt">How important is your partner to your deck?</label>
             <select name="partner" id="cmdr2-weight">
                 <option value="10">Just another card (10x weight)</option>
-                <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option>
+                <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option selected="selected">
                 <option value="30">A major boost for a deck that would struggle without it (30x weight)</option>
                 <option value="50">A critical piece of a deck that would fall flat without it (50x weight)</option>
             </select>
@@ -3400,7 +3401,7 @@
             <label for="partner" class="prompt">How important is your companion to your deck?</label>
             <select name="partner" id="cmdr3-weight">
                 <option value="10">Just another card (10x weight)</option>
-                <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option>
+                <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option selected="selected">
                 <option value="30">A major boost for a deck that would struggle without it (30x weight)</option>
                 <option value="50">A critical piece of a deck that would fall flat without it (50x weight)</option>
             </select>
@@ -3448,6 +3449,12 @@
             <label for="consider-ramp">Treat ramp as negative delay</label><br>
         </div>
         <div class="hover-text">Warning: This can mask the problems in a manabase. If you want to ramp every game, consider using the other settings to specify that</div>
+        <label for="ramp-decay" class="prompt">How often do mana dorks get killed in your usual playgroup?</label>
+        <select name="ramp-decay" id="ramp-decay">
+            <option value="0.1">Timmy Friendship Committee (average lifespan: 10 turns)</option>
+            <option value="0.2">Average pod of randoms (average lifespan: 5 turns)</option selected="selected">
+            <option value="0.3">Boardwipe Brigade (average lifespan: 3 turns)</option>
+        </select>
         <div id="modifications">
             <p class="prompt">Modify cards</p>
             <textarea id="modify" rows="5" cols="50"></textarea>
