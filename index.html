@@ -236,7 +236,10 @@
 </head>
 <body onload="disableButton()">
     <script>
-    var testDict; // map of loaded cards
+    var testDict = {}; // map of loaded cards
+    var loadedDecks = []; // store loaded decks
+    var currentDeck; // track which loaded deck is being worked on
+    var currentVariant; // track the variant of the loaded deck
 
     var landTypes; // array of 32 integers, counting the number of lands producing each subset of the 5 colors
     var landRamp;
@@ -1048,21 +1051,26 @@
         let splitL = sanitizedL.split("\n");
         let strippedL = "";
         let inSideboard = false;
+        let cardList = [];
         // remove sideboard, add custom separator string
-        for(let i = 0; i < splitL.length; i++){
+        for(let i = 0; i < splitL.length && strippedL.length < 1900; i++){
             if(splitL[i].toLowerCase().includes("sideboard")){
                 inSideboard = true
             }
             let first = splitL[i].charAt(0);
+            let name = splitL[i].substring(splitL[i].indexOf(" ") + 1);
             if(first >= '1' && first <= '9' && !inSideboard){
-                strippedL = strippedL + splitL[i] + "NEXT_CARD";
+                cardList.push(splitL[i]);
+                if(testDict[name] == undefined){
+                    strippedL = strippedL + splitL[i] + "NEXT_CARD";
+                }
             }
             if(splitL[i] == ""){
                 inSideboard = false;
             }
         }
         // send request to server
-        if(strippedL != lastDecklist){
+        if(strippedL != ""){
             console.log('loading');
             const deckLoadButton = document.getElementById("deck-load-button");
             deckLoadButton.disabled = true;
@@ -1071,11 +1079,21 @@
             console.log('loaded');
             deckLoadButton.disabled = false;
             deckLoadButton.value = 'Load';
-            testDict = await response.json();
+            let responseDict = await response.json();
+            let keyList = Object.keys(responseDict);
+            for(let i = 0; i < keyList.length; i++){
+                testDict[keyList[i]] = responseDict[keyList[i]];
+            }
         }
+
+        if(strippedL.length >= 1900){
+            loadDict();
+            return;
+        }
+
         lastDecklist = strippedL;
 
-        cardList = strippedL.split('NEXT_CARD');
+        //cardList = strippedL.split('NEXT_CARD');
         deckList = [];
         white = 0;
         blue = 0;
@@ -2609,7 +2627,7 @@
                 }*/
                 table.appendChild(tableRow(towerVariant, "td", ["", "table-num", "table-num"]));
             }
-            
+
             let rockVariant = testVariant("+1 Arcane Signet", createDiff([]), baseRate, baseDelay, negativeDelay, 1);
             let rockBoost = -parseFloat(rockVariant[2].substring(0,6));
             table.appendChild(tableRow(rockVariant, "td", ["", "table-num", "table-num"]));
