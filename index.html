@@ -232,6 +232,15 @@
         display: block;
     }
 
+    .checkbox-hidden {
+        display: none;
+        margin-left: 20px;
+    }
+
+    input[type=checkbox]:checked + .checkbox-hidden{
+        display: block;
+    }
+
     </style>
 </head>
 <body onload="disableButton()">
@@ -1449,6 +1458,9 @@
         computeButton.disabled = true;
         computeButton = document.getElementById("tap-compute-button");
         computeButton.disabled = true;
+        let rampCheck = document.getElementById("want-ramp");
+        rampCheck.checked = false;
+        autoModRamp();
     }
 
     // For any error we want to display, print it to the output box
@@ -2270,6 +2282,12 @@
     function parseMod(textLine){
         // detect selection
         textLine = textLine.trim();
+        if(textLine == ""){
+            return;
+        }
+        if(textLine.includes("*AUTO-")){
+            textLine = textLine.substring(textLine.indexOf("* ") + 2);
+        }
         let selectionText = "";
         let modText = "";
         let quoteSplit = textLine.split("\"");
@@ -2351,6 +2369,51 @@
             parseMod(modifyList[i]);
         }
     }
+
+    function autoModRamp(){
+        let modifyList = document.getElementById('modify').value.split('\n');
+        let isRamping = document.getElementById('want-ramp').checked;
+        let rampAmount = parseInt(document.getElementById('ramp-amount').value);
+        let rampTurn = parseInt(document.getElementById('ramp-turn').value);
+        let addedMods = [];
+        let newValue = "";
+        let rampSpot = 0;
+        for(let i = 0; i < modifyList.length; i++){
+            if(modifyList[i].includes("*AUTO-RAMP*")){
+                modifyList.splice(i, 1);
+                if(rampSpot == 0){
+                    rampSpot = i;
+                }
+                i--;
+            }
+        }
+        if(isRamping){
+            for(let i = 1; i < rampAmount; i++){
+                addedMods.push("*AUTO-RAMP* m=" + (rampTurn + i) + ": t-" + i)
+            }
+            if(rampAmount > 0){
+                addedMods.push("*AUTO-RAMP* m>" + (rampTurn + rampAmount - 1) + ": t-" + rampAmount);
+            }
+        }
+        for(let i = 0; i < modifyList.length; i++){
+            // add ramp mods at specified location
+            if(i == rampSpot){
+                for(let j = 0; j < addedMods.length; j++){
+                    newValue += "\n" + addedMods[j];
+                }
+            }
+            newValue += "\n" + modifyList[i];
+        }
+        if(rampSpot == modifyList.length){
+            for(let i = 0; i < addedMods.length; i++){
+                newValue += "\n" + addedMods[i];
+            }
+        }
+        newValue = newValue.substring(1);
+        
+        let inputField = document.getElementById('modify');
+        inputField.value = newValue;
+    }
     // This is the one tied to the compute button on the color calculator
     function colorTest(){
         // grab input from calculator
@@ -2383,96 +2446,6 @@
 
         processMods();
         // iterate through list of ignored cards
-        /*
-        let ignoreListContents = document.getElementById('ignore').value.split('\n');
-        let ignored = false;
-        for(let i = 0; i < ignoreListContents.length; i++){
-            let listItem = ignoreListContents[i];
-            let cardName = "";
-            let ignore = false;
-            let discount = 0;
-            // check for ignored cards
-            if(listItem.charAt(0) == '-'){
-                cardName = listItem.substring(1);
-                while(cardName.charAt(0) == " "){
-                    cardName = cardName.substring(1);
-                }
-                ignore = true;
-                ignored = true;
-            }
-            // check for discounted cards
-            else if(listItem.includes(" ")){
-                cardName = listItem.substring(listItem.indexOf(" ") + 1);
-                discount = parseInt(listItem.substring(0, listItem.indexOf(" ")));
-            }
-            if(cardName != ""){
-                // go through decklist to ignore cards and apply discounts
-                for(let j = 0; j < deckList.length; j++){
-                    if(deckList[j].name.toLowerCase().includes(cardName.toLowerCase())){
-                        console.log(cardName);
-                        deckList[j].ignore = ignore;
-                        if(deckList[j].colorCost.t >= discount){
-                            deckList[j].discount = discount;
-                        }
-                        else{
-                            deckList[j].discount = deckList[j].colorCost.t;
-                            addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
-                        }
-                        ignored = true;
-                    }
-                }
-                // repeat for commanders
-                if(commander1 && commander1.name.toLowerCase().includes(cardName.toLowerCase())){
-                    console.log(cardName);
-                    commander1.ignore = ignore;
-                    if(commander1.colorCost.t >= discount){
-                        commander1.discount = discount;
-                    }
-                    else{
-                        commander1.discount = commander1.colorCost.t;
-                        addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
-                    }
-                    ignored = true;
-                }
-                if(commander2 && commander2.name.toLowerCase().includes(cardName.toLowerCase())){
-                    console.log(cardName);
-                    commander2.ignore = ignore;
-                    if(commander2.colorCost.t >= discount){
-                        commander2.discount = discount;
-                    }
-                    else{
-                        commander2.discount = commander2.colorCost.t;
-                        addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
-                    }
-                    ignored = true;
-                }
-                if(commander3 && commander3.name.toLowerCase().includes(cardName.toLowerCase())){
-                    console.log(cardName);
-                    commander3.ignore = ignore;
-                    if(commander3.colorCost.t >= discount){
-                        commander3.discount = discount;
-                    }
-                    else{
-                        commander3.discount = commander3.colorCost.t;
-                        addError("color-analyzer-result-box", "Warning: " + cardName + " can not be given a generic discount of " + discount);
-                    }
-                    ignored = true;
-                }
-            }
-        }
-            for(let i = 0; i < deckList.length; i++){
-            testDict[deckList[i].name].ignore = deckList[i].ignore;
-            testDict[deckList[i].name].discount = deckList[i].discount;
-        }
-
-        if(ignored){
-            let ignoreList = document.getElementById("ignore-list");
-            ignoreList.hidden = false;
-            console.log("showing ignore list");
-        }
-        */
-       
-        // reflect discount status onto stored card data for future loads
         
 
         //remove previous errors
@@ -3445,10 +3418,19 @@
     <div class="analyzer" name="modifier">
         <p class="title">Settings & Card Modifications</p>
         <div class="on-hover">
+            <label for="negative-delay">Treat ramp as negative delay</label>
             <input type="checkbox" id="negative-delay" name="negative-delay" value="Negative Delay">
-            <label for="consider-ramp">Treat ramp as negative delay</label><br>
         </div>
-        <div class="hover-text">Warning: This can mask the problems in a manabase. If you want to ramp every game, consider using the other settings to specify that</div>
+        <div class="hover-text">Warning: This can mask the problems in a manabase. If you want to ramp every game, consider using the setting below</div>
+        <div>
+            <label for="want-ramp">Ramp every game</label>
+            <input type="checkbox" id="want-ramp" name="want-ramp" value="Want Ramp" onChange="autoModRamp();">
+            <span class="checkbox-hidden">
+                I want to ramp by <input type="text" id="ramp-amount" value="1" style="width: 30px" onChange="autoModRamp();"> 
+                mana before turn <input type="text" id="ramp-turn" value="4" style="width: 30px" onChange="autoModRamp();">
+            </span>
+        </div>
+        
         <label for="ramp-decay" class="prompt">How often do mana dorks get killed in your usual playgroup?</label>
         <select name="ramp-decay" id="ramp-decay">
             <option value="0.1">Timmy Friendship Committee (average lifespan: 10 turns)</option>
@@ -3459,7 +3441,7 @@
             <p class="prompt">Modify cards</p>
             <textarea id="modify" rows="5" cols="50"></textarea>
             <p> If a card name contains "", (), or :, put double quotes around it (i.e. "Summon: Fenrir")<br>
-                To remove an auto-generated mod, only remove the part after the ":"<br>
+                If you want to edit an auto-generated mod, remove the *AUTO* tag and turn off the relevant setting<br>
                 Modification syntax (insert link later)
             </p>
         </div>
