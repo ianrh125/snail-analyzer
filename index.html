@@ -302,6 +302,8 @@
 
     var dorkDecay;
     var rockDecay;
+    var drawStart = 0;
+    var drawAmount = 0;
 
     var roundTime;
     // staples to automatically discount
@@ -723,18 +725,32 @@
         return myMullDist;
     }
 
+    function factorDraw(turn){
+        if(turn < drawStart){
+            return turn;
+        }
+        else{
+            let extraDraws = Math.floor((turn - drawStart + 1) * drawAmount);
+            return turn + extraDraws;
+        }
+    }
+
     // Find the distribution of lands drawn by a given turn, factoring in mulligans
     function landsAtTurn(turn, ramp){
         let myLandCount = Math.round(landCount + ramp);
-        let myMullDist = addRampToOpeningHand(mullLands.slice(), Math.round(ramp));
-        if(!ramp){
-            myLandCount = Math.round(landCount + rampCount);
-            myMullDist = addRampToOpeningHand(mullLands.slice(), Math.round(rampCount));
+        let myMullDist = mullLands.slice();
+        if(ramp > 0){
+            myMullDist = addRampToOpeningHand(mullLands.slice(), Math.round(ramp));
+        }
+        let mullSum = sum(myMullDist);
+        if(mullSum < 0.99){
+            console.log("low mullDist sum: " + mullSum);
         }
         let landDist = new Array(13).fill(0);
+        let fixedTurn = factorDraw(turn);
         for(let startLands = 0; startLands < 7; startLands++){
-            for(let drawnLands = 0; drawnLands <= turn; drawnLands++){
-                landDist[Math.min(startLands + drawnLands, 12)] += myMullDist[startLands] * drawType(deckSize-7, myLandCount - startLands, turn, drawnLands);
+            for(let drawnLands = 0; drawnLands <= fixedTurn; drawnLands++){
+                landDist[Math.min(startLands + drawnLands, 12)] += myMullDist[startLands] * drawType(deckSize-7, myLandCount - startLands, fixedTurn, drawnLands);
             }
         }
         return landDist;
@@ -927,7 +943,6 @@
                 let rampMult = 1;
                 if(i < cost.t){
                     rampMult = drawTypeMin(myLandCount + rampAtTurn, rampAtTurn, lands, cost.t - i) * (1 - remainder) + drawTypeMin(myLandCount + rampAtTurn + 1, rampAtTurn + 1, lands, cost.t - i) * remainder;
-                    console.log(rampMult);
                 }
                 pCast += landReqs[lands] * landDist[lands] * rampMult;
             }
@@ -1460,6 +1475,8 @@
         computeButton.disabled = true;
         let rampCheck = document.getElementById("want-ramp");
         rampCheck.checked = false;
+        let drawCheck = document.getElementById("want-draw");
+        drawCheck.checked = false;
         autoModRamp();
     }
 
@@ -2424,6 +2441,14 @@
 
         approxColors = parseFloat(document.getElementById('approx-colors').value) || 5;
         approxSamples = parseFloat(document.getElementById('approx-samples').value) || 100000;
+        if(document.getElementById("want-draw").checked){
+            drawAmount = parseFloat(document.getElementById('draw-amount').value) || 0;
+            drawStart = parseFloat(document.getElementById('draw-turn').value) || 0;
+        }
+        else{
+            drawAmount = 0;
+            drawStart = 0;
+        }
         let landCountBackup = landCount;
         let landTypesBackup = landTypes.slice();
 
@@ -3430,7 +3455,14 @@
                 mana before turn <input type="text" id="ramp-turn" value="4" style="width: 30px" onChange="autoModRamp();">
             </span>
         </div>
-        
+        <div>
+            <label for="want-draw">Account for draw</label>
+            <input type="checkbox" id="want-draw" name="want-draw" value="Want Draw">
+            <span class="checkbox-hidden">
+                My deck usually draws an extra <input type="text" id="draw-amount" value="1" style="width: 30px"> 
+                cards per turn, starting on turn <input type="text" id="draw-turn" value="5" style="width: 30px">
+            </span>
+        </div>
         <label for="ramp-decay" class="prompt">How often do mana dorks get killed in your usual playgroup?</label>
         <select name="ramp-decay" id="ramp-decay">
             <option value="0.1">Timmy Friendship Committee (average lifespan: 10 turns)</option>
