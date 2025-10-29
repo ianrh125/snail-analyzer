@@ -984,8 +984,7 @@
 
     // Pings the server with the user's decklist, unpacks and stores the result
     async function loadDict(){
-
-        //remove previous error messages
+        // remove previous error messages
         clearError("load-result-box");
         let ignoreList = document.getElementById("ignore");
         //ignoreList.value = "";
@@ -1002,26 +1001,40 @@
             .replaceAll(/\s+\*F\*/gm, "") // remove " *F*"
             .replaceAll(/\s*#.*$/gm, ""); // remove anything after "#"
 
+        // show error if no input was given
         if(sanitizedL == ""){
             addError("load-result-box", "Error: no cards entered");
             return;
         }
+
+        // remove sideboard, empty lines, and add custom separator string
         let splitL = sanitizedL.split("\n");
         let strippedL = "";
         let inSideboard = false;
-        // remove sideboard, add custom separator string
-        for(let i = 0; i < splitL.length; i++){
-            if(splitL[i].toLowerCase().includes("sideboard")){
+        for (const line of splitL) {
+            if (line.toLowerCase().includes("sideboard")) {
                 inSideboard = true
             }
-            let first = splitL[i].charAt(0);
-            if(first >= '1' && first <= '9' && !inSideboard){
-                strippedL = strippedL + splitL[i] + "NEXT_CARD";
+            if (!inSideboard && line != "") {
+                let first = line.charAt(0);
+                if (first >= "1" && first <= "9") { // is non-zero digit
+                    if (strippedL != "") {
+                        strippedL += "NEXT_CARD";
+                    }
+                    strippedL += line;
+                } else if (first != "0") {
+                    if (strippedL != "") {
+                        strippedL += "NEXT_CARD";
+                    }
+                    // insert quantity "1" if none is provided
+                    strippedL += "1 " + line;
+                }
             }
-            if(splitL[i] == ""){
+            if (line == "") {
                 inSideboard = false;
             }
         }
+
         // send request to server
         if(strippedL != lastDecklist){
             console.log('loading');
@@ -1036,7 +1049,6 @@
         }
         lastDecklist = strippedL;
 
-        cardList = strippedL.split('NEXT_CARD');
         deckList = [];
         white = 0;
         blue = 0;
@@ -1063,6 +1075,7 @@
         commander1 = undefined;
         commander2 = undefined;
         commander3 = undefined;
+
         // get commander names from input fields
         let commanderName1 = (document.getElementById('commander-name-1').value) || "nocard";
         let commanderName2 = document.getElementById('commander-name-2').value || "nocard";
@@ -1074,24 +1087,19 @@
         condLands = [];
         condNames = [];
 
-        let uniqueCards = new Map(); // for decklists with multiple printings of a card, combine them into a single listing
+        // sanitize card names
+        let cardList = strippedL.split('NEXT_CARD');
+        for (let c = 0; c < cardList.length; c++) {
+            cardList[c] = cardList[c].replaceAll("%26", "&").replaceAll("PLUS", "+"); // revert temporary replacements of ampersands and pluses
+            cardList[c] = cardList[c].split(" (")[0] // discard anything after opening round bracket
+            cardList[c] = cardList[c].split(" *F*")[0] // discard foiling
+        }
+
         // read in cards from decklist, collect some preliminary information
-        for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
-            // sanitize card names
-            if(cardList[c].includes(" (")){
-                cardList[c] = cardList[c].substring(0, cardList[c].indexOf(" ("));
-            }
-            if(cardList[c].includes(" *F*")){
-                cardList[c] = cardList[c].substring(0, cardList[c].indexOf(" *F*"));
-            }
-            cardList[c] = cardList[c].replaceAll("%26", "&");
-            let name = cardList[c];
-            let cut = 0
-            while(name.charAt(cut) != ' '){
-                cut++;
-            }
-            let count = parseInt(name.substring(0,cut));
-            name = name.substring(cut+1).replaceAll("PLUS", "+");
+        for (const cardLine of cardList) {
+            const cut = cardLine.indexOf(" ");
+            const count = parseInt(cardLine.substring(0, cut));
+            const name = cardLine.substring(cut + 1);
             let card = testDict[name];
             // count up colors of deck
             if(card.mana_cost){
@@ -1120,9 +1128,9 @@
                     forestTypes[landIndex] = true;
                 }
             }
-
             deckSize += count;
         }
+
         // check to see if deck size lines up with common formats
         if(commanderName3 != "nocard"){ // exclude companion from deck total, leave commanders in
             deckSize--;
@@ -1139,19 +1147,17 @@
         if(commanderName2 != "nocard"){
             deckSize--;
         }
+
         // process cards in decklist
-        for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
-            let name = cardList[c];
-            let cut = 0
-            while(name.charAt(cut) != ' '){
-                cut++;
-            }
-            let count = parseInt(name.substring(0,cut));
-            name = name.substring(cut+1).replaceAll("PLUS", "+");
+        let uniqueCards = new Map(); // for decklists with multiple printings of a card, combine them into a single listing
+        for (const cardLine of cardList) {
+            const cut = cardLine.indexOf(" ");
+            const count = parseInt(cardLine.substring(0, cut));
+            const name = cardLine.substring(cut + 1);
             let card = testDict[name];
             // Handle exceptions
             if(card == "NOT FOUND"){
-                addError("load-result-box", "Error: \"" + name + "\" is not in our databse or Scryfall. This may be due to a typo");
+                addError("load-result-box", "Error: \"" + name + "\" is not in our database or Scryfall. This may be due to a typo");
             }
             else if(card == "FOUND"){
                 addError("load-result-box", "Error: \"" + name + "\" is not in our database yet. Give us a few minutes to pull the latest data and try again");
