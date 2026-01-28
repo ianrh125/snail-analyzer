@@ -241,6 +241,75 @@
         display: block;
     }
 
+    .loaded-deck{
+        border: 1px solid black;
+        background-color: #EEE;
+        padding: 5px;
+    }
+
+    .variant{
+        border: 1px solid black;
+        background-color: #FFF;
+        padding: 5px;
+    }
+
+    .inline-button{
+        margin-left: 10px;
+    }
+
+    .deck-switch-button{
+        margin-left: 5px;
+        background-color:#77ee77;
+        border-radius: 12px;
+        border: 1px solid #383;
+        padding: 2px 8px;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 2px #383;
+        transition: 0.2s ease-out;
+    }
+    .deck-switch-button:hover{
+        background-color:#3e3;
+    }
+    .deck-switch-button:active{
+        background-color:#5c5;
+        box-shadow: 0 1px #383;
+        transform: translateY(1px);
+        transition: 0.05s ease-out;
+    }
+    .deck-switch-button:disabled{
+        background-color:#bdb;
+        box-shadow: 0 1px #9b9;
+        transform: translateY(1px);
+    }
+
+    /*details>summary {
+        list-style: none;
+    }
+    summary::-webkit-details-marker {
+        display: none;
+    }
+    summary{
+        padding-bottom:2px;
+    }
+
+    summary::after {
+        content: '+';
+        float:right;
+        font-weight: bold;
+        font-size:15px;
+        padding-left: 4px;
+        padding-right: 4px;
+        border: 1px solid black;
+        background-color: #cfc;
+    }
+    details[open] summary:after {
+        content: "-";
+        padding-left: 6px;
+        padding-right: 6px;
+        background-color: #fcc;
+    }*/
+
     </style>
 </head>
 <body onload="disableButton()">
@@ -323,6 +392,20 @@
         "Hoarding Broodlord": 3,
         "Metalwork Colossus": 6,
         "Excalibur, Sword of Eden": 7
+    }
+
+    // defaults to reset to
+    const defaultParams = {
+        "draw-amount": "1",
+        "draw-turn": "5",
+        "negative-delay": false,
+        "ramp-amount": "1",
+        "ramp-decay": "0.2",
+        "ramp-turn": "4",
+        "tap-turns": "7",
+        "want-draw": false,
+        "want-ramp": false,
+        "modify": ""
     }
 
     // Basic factorial function
@@ -743,8 +826,11 @@
             myMullDist = addRampToOpeningHand(mullLands.slice(), Math.round(ramp));
         }
         let mullSum = sum(myMullDist);
-        if(mullSum < 0.99){
+        if(mullSum < 0.95){
             console.log("low mullDist sum: " + mullSum);
+        }
+        for(item of myMullDist){
+            item = item/mullSum;
         }
         let landDist = new Array(13).fill(0);
         let fixedTurn = factorDraw(turn);
@@ -1061,6 +1147,364 @@
         return myLandTypes;
     }
 
+    function dropNumCompare(a, b){
+        let cutA = a.substring(a.indexOf(" ") + 1);
+        let cutB = b.substring(b.indexOf(" ") + 1);
+        return cutA.localeCompare(cutB);
+    }
+
+    function listDiff(listA, listB){
+        let AnotB = [];
+        let BnotA = [];
+        let sortA = listA.slice().sort(dropNumCompare);
+        let sortB = listB.slice().sort(dropNumCompare);
+        let indexA = 0;
+        let indexB = 0;
+        while(indexA < sortA.length && indexB < sortB.length){
+            let itemA = sortA[indexA];
+            let itemB = sortB[indexB];
+            let trimA = itemA.substring(itemA.indexOf(" "));
+            let trimB = itemB.substring(itemB.indexOf(" "));
+            if(itemA == itemB){
+                indexA++;
+                indexB++;
+            }
+            else if (trimA == trimB){
+                let numA = parseInt(itemA.substring(0, itemA.indexOf(" ")));
+                let numB = parseInt(itemB.substring(0, itemB.indexOf(" ")));
+                if(numA > numB){
+                    AnotB.push((numA-numB) + trimA);
+                } 
+                else {
+                    BnotA.push((numB-numA) + trimB);
+                }
+                indexA++;
+                indexB++;
+            }
+            else if (sortA[indexA].localeCompare(sortB[indexB]) == -1){
+                AnotB.push(sortA[indexA]);
+                indexA++;
+            }
+            else if (sortA[indexA].localeCompare(sortB[indexB]) == 1){
+                BnotA.push(sortB[indexB]);
+                indexB++;
+            }
+            else{
+                console.log("This should be impossible");
+            }
+        }
+        while(indexA < sortA.length){
+            AnotB.push(sortA[indexA]);
+            indexA++;
+        }
+        while(indexB < sortB.length){
+            BnotA.push(sortB[indexB]);
+            indexB++;
+        }
+        return [AnotB, BnotA];
+    }
+
+    function formatCommanderNames(name1, name2, name3){
+        if(name1 == "nocard"){
+            return "No Commander";
+        }
+        let name = name1;
+        if(name2 != "nocard"){
+            name += " // " + name2;
+        }
+        if(name3 != "nocard"){
+            name += " // " + name3;
+        }
+        return name;
+    }
+
+    function updateLoadedDeckDisplay(){
+        let deckID = "deck-" + currentDeck;
+        let varID = deckID + "-var-" + currentVariant;
+        let deckElement = document.getElementById(deckID);
+        let relevantBox = document.getElementById("loaded-decks");
+        if(deckElement == null){
+            let details = document.createElement("details");
+            details.id = deckID + "-details";
+            details.setAttribute("open", "");
+            let summary = document.createElement("summary");
+            summary.id = deckID + "-summary";
+            let textElement = document.createElement("span");
+            textElement.id = deckID + "-text";
+            textElement.innerText = loadedDecks[currentDeck].commander;
+            let optimizeButton = document.createElement("button");
+            optimizeButton.id = deckID + "-button";
+            optimizeButton.innerText = "Optimize Basics";
+            optimizeButton.classList.add("deck-switch-button");
+            optimizeButton.addEventListener('click', function(evt){optimizeBasics(evt.currentTarget.id)});
+            textElement.appendChild(optimizeButton);
+            summary.appendChild(textElement);
+            details.appendChild(summary);
+
+            deckElement = document.createElement("div");
+            deckElement.id = deckID;
+            deckElement.classList.add("loaded-deck");
+            deckElement.appendChild(details);
+            //deckElement.innerText = loadedDecks[currentDeck].commander;
+            relevantBox.appendChild(deckElement);
+        }
+        let varElement = document.getElementById(varID);
+        if(varElement != null){
+            varElement.remove();
+        }
+        varElement = document.createElement("div");
+        varElement.id = varID;
+        varElement.classList.add("variant");
+        if(currentVariant == 0){
+            varElement.style.marginTop = "5px";
+        }
+        let textElement = document.createElement("span");
+        textElement.id = varID + "-text";
+        textElement.innerText = "Version " + (currentVariant + 1) + " (" + loadedDecks[currentDeck].variants[currentVariant].delay + ")";
+        let loadButton = document.createElement("button");
+        loadButton.id = varID + "-button";
+        loadButton.innerText = "Load";
+        loadButton.disabled = true;
+        loadButton.classList.add("deck-switch-button");
+        loadButton.addEventListener('click', function(evt){loadPrevious(evt.currentTarget.id, true)});
+        textElement.appendChild(loadButton);
+        let deckDetails = document.getElementById(deckID + "-details");
+        deckDetails.appendChild(varElement);
+        if(loadedDecks[currentDeck].variants[currentVariant].added != null){
+            let newTable = document.createElement("table");
+            newTable = document.createElement("table");
+            newTable.id = varID + "-table";
+            newTable.appendChild(tableRow(["Added", "Removed"], "th", ["",""]));
+            let added = loadedDecks[currentDeck].variants[currentVariant].added;
+            let removed = loadedDecks[currentDeck].variants[currentVariant].removed;
+            for(let i = 0; i < added.length || i < removed.length; i++){
+                if(i >= added.length){
+                    newTable.appendChild(tableRow(["", removed[i]], "td", ["",""]));
+                }
+                else if(i >= removed.length){
+                    newTable.appendChild(tableRow([added[i], ""], "td", ["",""]));
+                }
+                else{
+                    newTable.appendChild(tableRow([added[i], removed[i]], "td", ["",""]));
+                }
+            }
+
+            let details = document.createElement("details");
+            details.id = varID + "-details";
+            details.setAttribute("open", "");
+            let summary = document.createElement("summary");
+            summary.id = varID + "-summary";
+            //summary.innerText = loadedDecks[currentDeck].commander;
+            summary.appendChild(textElement);
+            details.appendChild(summary);
+            details.appendChild(newTable);
+            varElement.appendChild(details);
+        }
+        else{
+            varElement.appendChild(textElement);
+        }
+    }
+
+    function paramCompare(a, b){
+        let paramKeys = Object.keys(a);
+        for(let i = 0; i < paramKeys.length; i++){
+            if(a[paramKeys[i]] != b[paramKeys[i]]){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function updateButtons(varID){
+        let inputs = document.getElementsByTagName("button");
+        for(let i = 0; i < inputs.length; i++){
+            if(inputs[i].id.includes("deck-") && inputs[i].id.includes("var-")){
+                if(inputs[i].id == varID){
+                    console.log("match");
+                }
+                inputs[i].disabled = (inputs[i].id.includes(varID));
+            }
+        }
+    }
+
+    function updateDelayReadings(){
+        for(let i = 0; i < loadedDecks[currentDeck].variants.length; i++){
+            let deckID = "deck-" + currentDeck;
+            let varID = deckID + "-var-" + i;
+            let textID = varID + "-text";
+            let textElement = document.getElementById(textID);
+            let iParams = loadedDecks[currentDeck].variants[i].params;
+            let currentParams = loadedDecks[currentDeck].variants[currentVariant].params;
+            if(paramCompare(iParams, currentParams)){
+                textElement.innerText = "Version " + (i + 1) + " (" + loadedDecks[currentDeck].variants[i].delay + ")";
+            }
+            else{
+                textElement.innerText = "Version " + (i + 1) + " (outdated)";
+            }
+            let loadButton = document.createElement("button");
+            loadButton.id = varID + "-button";
+            loadButton.innerText = "Load";
+            loadButton.classList.add("deck-switch-button");
+            loadButton.addEventListener('click', function(evt){loadPrevious(evt.currentTarget.id, true)});
+            textElement.appendChild(loadButton);
+        }
+        let deckID = "deck-" + currentDeck;
+        let varID = deckID + "-var-" + currentVariant;
+        updateButtons(varID + "-button");
+    }
+
+    function getAllParameters(){
+        let inputs = document.getElementsByTagName("input");
+        let params = {};
+        for(let i = 0; i < inputs.length; i++){
+            if(inputs[i].type == "text" || inputs[i].type == "textarea"){
+                params[inputs[i].id] = inputs[i].value;
+            }
+            else if(inputs[i].type == "checkbox"){
+                params[inputs[i].id] = inputs[i].checked;
+            }
+        }
+        let selects = document.getElementsByTagName("select")
+        for(let i = 0; i < selects.length; i++){
+            params[selects[i].id] = selects[i].value;
+        }
+        let textareas = document.getElementsByTagName("textarea")
+        for(let i = 0; i < textareas.length; i++){
+            if(textareas[i].id != "decklist"){
+                params[textareas[i].id] = textareas[i].value;
+            }
+        }
+        return params;
+    }
+
+    function setAllParameters(useDefaults){
+        let params;
+        if(useDefaults){
+            params = defaultParams;
+        }
+        else{
+            params = loadedDecks[currentDeck].variants[currentVariant].params;
+        }
+        let paramKeys = Object.keys(params);
+        for(let i = 0; i < paramKeys.length; i++){
+            let input = document.getElementById(paramKeys[i]);
+            if(input.type == "text" && !(input.id.includes("commander-name") && useDefaults) || (input.type == "textarea" && input.id != "decklist") || input.tagName == "select"){
+                input.value = params[paramKeys[i]];
+            }
+            if(input.type == "checkbox"){
+                input.checked = params[paramKeys[i]];
+            }
+        }
+    }
+
+    async function loadPrevious(varID, testColors){
+        console.log("loading " + varID);
+        let splitID = varID.split("-");
+        let oldDeck = currentDeck;
+        currentDeck = parseInt(splitID[1]);
+        currentVariant = parseInt(splitID[3]);
+        updateButtons(varID);
+        let newDeck = loadedDecks[currentDeck].variants[currentVariant];
+        let newDecklist = newDeck.list[0];
+        for(let i = 1; i < newDeck.list.length; i++){
+            newDecklist += "\n" + newDeck.list[i];
+        }
+        document.getElementById("decklist").value = newDecklist;
+        if(currentDeck != oldDeck){
+            setAllParameters();
+        }
+        loadDict();
+        if(testColors){
+            colorTest();
+        }
+    }
+
+    function changeList(add, remove){
+        let listSplit = document.getElementById("decklist").value.split("\n");
+        let rebuildList = "";
+        for(let i = 0; i < listSplit.length; i++){
+            let entry = listSplit[i];
+            let num = parseInt(entry.substring(0, entry.indexOf(" ")));
+            let cardName = entry.substring(entry.indexOf(" ") + 1);
+            if(cardName == add){
+                num++;
+            }
+            if(cardName == remove){
+                num--;
+            }
+            if(i > 0){
+                rebuildList += "\n"
+            }
+            rebuildList += num + " " + cardName;
+        }
+        document.getElementById("decklist").value = rebuildList;
+    }
+
+    function optimizePass(){
+        if(loadedDecks[currentDeck].variants[currentVariant].landSwap == null){
+            let change = colorTest();
+            let prevVar = currentVariant;
+            changeList(change[0], change[1]);
+            loadDict();
+            loadedDecks[currentDeck].variants[prevVar].landSwap = currentVariant;
+        }
+        else{
+            currentVariant = loadedDecks[currentDeck].variants[currentVariant].landSwap;
+            if(loadedDecks[currentDeck].variants[currentVariant].landSwap == null){
+                let varID = "deck-" + currentDeck + "-var-" + currentVariant;
+                loadPrevious(varID + "-button");
+            }
+        }
+    }
+
+    function optimizeBasics(deckID){
+        deckNumber = parseInt(deckID.substring(5, 6));
+        currentDeck = deckNumber;
+        if(loadedDecks[currentDeck].variants[currentVariant].landSwap == null){
+            loadPrevious("deck-" + deckNumber + "-var-" + currentVariant + "-button");
+        }
+        let startTime = Date.now();
+        let steps = 0;
+        let minDelay = 100;
+        let bestVariant = 0;
+        while(steps < 100){
+            optimizePass();
+            let currentTime = Date.now();
+            if(currentTime - startTime > 5000){
+                let loadResult = document.getElementById("load-result");
+                loadResult.innerText = "Optimization halted due to time concerns. Click \"Optimize Basics\" again to resume";
+            }
+            let measureDelay = parseFloat(loadedDecks[currentDeck].variants[currentVariant].delay);
+            if(measureDelay != null && measureDelay < minDelay){
+                minDelay = measureDelay;
+                bestVariant = currentVariant;
+            }
+            steps++;
+        }
+        for(let i = 1; i < loadedDecks[currentDeck].variants.length; i++){
+            let details = document.getElementById("deck-" + currentDeck + "-var-" + i + "-details");
+            details.open = (i == bestVariant);
+        }
+        loadPrevious("deck-" + currentDeck + "-var-" + bestVariant + "-button");
+        colorTest();
+        let loadResult = document.getElementById("load-result");
+        loadResult.innerText = "Optimization complete!";
+        console.log(bestVariant);
+        console.log(minDelay);
+    }
+
+    function WUBRGtoRGB(w, u, b, r, g){
+
+        let colorMax = Math.max(w, u, b, r, g);
+        let hueCap = Math.sqrt(r + g + u + 0.01);
+        let hueSum = r + g + u;
+        let allSum = Math.sqrt(w) + Math.sqrt(b) + hueCap;
+        r = ((Math.sqrt(r) / hueCap) * 128 + 127) * (hueCap)/allSum + (255 * Math.sqrt(w)/allSum) + 136 * (Math.sqrt(b)/allSum);
+        g = ((Math.sqrt(g) / hueCap) * 128 + 127) * (hueCap)/allSum + (238 * Math.sqrt(w)/allSum) + 119 * (Math.sqrt(b)/allSum);
+        u = ((Math.sqrt(u) / hueCap) * 128 + 127) * (hueCap)/allSum + (204 * Math.sqrt(w)/allSum) + 153 * (Math.sqrt(b)/allSum);
+        return "rgb(" + Math.round(r) + ", " + Math.round(g) + "," + Math.round(u) + ")";
+    }
+
     // Pings the server with the user's decklist, unpacks and stores the result
     async function loadDict(){
 
@@ -1221,6 +1665,61 @@
         if(commanderName2 != "nocard"){
             deckSize--;
         }
+
+        // check for matches to any previous decks
+        let match = false;
+        for(let i = 0; i < loadedDecks.length && !match; i++){
+            let compare = listDiff(cardList, loadedDecks[i].variants[0].list);
+            if(compare[0].length < 20){
+                // base deck matched, check for any exact matches with variants
+                match = true;
+                currentDeck = i;
+                let exactVariant = false;
+                for(let j = 0; j < loadedDecks[i].variants.length && !exactVariant; j++){
+                    let compareVar = listDiff(cardList, loadedDecks[i].variants[j].list);
+                    if(compareVar[0].length == 0){
+                        exactVariant = true;
+                        currentVariant = j;
+                    }
+                    updateButtons("deck-" + i + "-var-" + j + "-button");
+                }
+                if(!exactVariant){
+                    // add new variant
+                    currentVariant = loadedDecks[i].variants.length;
+                    let variant = {
+                        list: cardList.slice(),
+                        params: getAllParameters(),
+                        added: compare[0],
+                        removed: compare[1],
+                        delay: "untested"
+                    };
+                    loadedDecks[i].variants.push(variant);
+                    updateLoadedDeckDisplay();
+                }
+
+            }
+        }
+        if(!match){
+            // no match found, add to list
+            currentDeck = loadedDecks.length;
+            currentVariant = 0;
+            setAllParameters(true);
+            let deck = {
+                commander: formatCommanderNames(commanderName1, commanderName2, commanderName3),
+                variants: []
+            };
+            let variant = {
+                list: cardList.slice(),
+                params: getAllParameters(),
+                delay: "untested"
+            };
+            deck.variants.push(variant);
+            loadedDecks.push(deck);
+            updateLoadedDeckDisplay();
+            let newDeckElement = document.getElementById("deck-" + currentDeck);
+            newDeckElement.style.backgroundColor = WUBRGtoRGB(white, blue, black, red, green);
+        }
+
         // process cards in decklist
         for(let c = 0; c < cardList.length && cardList[c] != ""; c++){
             let name = cardList[c];
@@ -1478,6 +1977,14 @@
         let drawCheck = document.getElementById("want-draw");
         drawCheck.checked = false;
         autoModRamp();
+
+        let loadButton = document.getElementById("load-deck-button-0");
+        loadButton.addEventListener('click', function(evt){switchDivTab(evt.currentTarget.id)});
+        loadButton.onclick="switchDivTab(load-deck-button-0)";
+        loadButton = document.getElementById("load-deck-button-1");
+        loadButton.addEventListener('click', function(evt){switchDivTab(evt.currentTarget.id)});
+        loadButton.onclick="switchDivTab(load-deck-button-1)";
+        switchDivTab("load-deck-button-0");
     }
 
     // For any error we want to display, print it to the output box
@@ -1633,7 +2140,7 @@
                         landTypes[landIndex] += multiplier * (mana.prod - mana.ramp);
                     }
                     else{
-                        typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].turn, ramp, false)[x];
+                        //typeMult *= turnsToCast(deckList[i].modColorCost, deckList[i].turn, ramp, false)[x];
                         landRamp[landIndex] += multiplier * mana.ramp;
                         landTypes[landIndex] += multiplier * (mana.prod - mana.ramp);
                         
@@ -1798,8 +2305,8 @@
         // compute averages
         cmcOnCurve /= totalCmc;
         totalCmcDelay /= totalCmc;
-        console.log("curve rate: " + cmcOnCurve);
-        console.log("average delay: " + totalCmcDelay);
+        //console.log("curve rate: " + cmcOnCurve);
+        //console.log("average delay: " + totalCmcDelay);
         if(individualResults){
             return [cmcOnCurve, totalCmcDelay, allCards];
         }
@@ -1963,7 +2470,26 @@
             tablinks[i].className = tablinks[i].className.replace(" active", "");
         }
         // show new table
-        document.getElementById(id+"-table-"+tabNum).style.display = "table";
+        document.getElementById(id+"-table-"+tabNum).style.display = "block";
+        document.getElementById(buttonId).className += " active";
+    }
+
+    function switchDivTab(buttonId){
+        // find corresponding table and button
+        let id = buttonId.substring(0,buttonId.indexOf("-button-"));
+        let tabNum = buttonId.substring(buttonId.lastIndexOf("-")+1);
+        let divs = document.getElementsByClassName(id + "-div");
+        // clear existing table
+        for(let i = 0; i < divs.length; i++){
+            divs[i].style.display = "none";
+        }
+
+        let tablinks = document.getElementsByClassName(id + "-button");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        // show new table
+        document.getElementById(id+"-div-"+tabNum).style.display = "block";
         document.getElementById(buttonId).className += " active";
     }
 
@@ -2431,6 +2957,15 @@
         let inputField = document.getElementById('modify');
         inputField.value = newValue;
     }
+
+    function getCount(cardName){
+        for(let i = 0; i < deckList.length; i++){
+            if(deckList[i].name.toLowerCase() == cardName.toLowerCase()){
+                return deckList[i].count;
+            }
+        }
+        return 0;
+    }
     // This is the one tied to the compute button on the color calculator
     function colorTest(){
         // grab input from calculator
@@ -2559,6 +3094,14 @@
             cardTable.appendChild(tableRow([reduceName(allCards[i][0], 25), reduceMana(factorDiscount(testDict[allCards[i][0]].modManaCost, testDict[allCards[i][0]].discount)), (allCards[i][1] * 100).toFixed(1) + "%", allCards[i][2].toFixed(3)], "td", rowClass));
         }
 
+        // update average delay to deck loader
+        //let varID = "deck-" + currentDeck + "-var-" + currentVariant + "-text";
+        //let varElement = document.getElementById(varID);
+        loadedDecks[currentDeck].variants[currentVariant].delay = baseDelay.toFixed(3) + " delay";
+        loadedDecks[currentDeck].variants[currentVariant].params = getAllParameters();
+        //updateLoadedDeckDisplay();
+        updateDelayReadings();
+
         landCount = landCountBackup;
         landTypes = landTypesBackup;
 
@@ -2569,54 +3112,87 @@
         let maxBoost = genericBoost;
         let maxColor = "none";
         let maxLand = "Wastes";
+        let minBoost = 100;
+        let minColor = "none";
+        let minLand = "Wastes"
         // calculate for variants with all the colors present in the deck
         if(white > 0){
             let plainsVariant = testVariant("+1 Plains", createDiff([[1, 1]]), baseRate, baseDelay, negativeDelay);
             whiteBoost = -parseFloat(plainsVariant[2].substring(0,6));
+            console.log("White boost: " + whiteBoost);
             if(whiteBoost > maxBoost){
                 maxBoost = whiteBoost;
                 maxColor = "white";
                 maxLand = "Plains";
+            }
+            if(whiteBoost < minBoost && getCount("Plains") > 1){
+                minBoost = whiteBoost;
+                minColor = "white";
+                minLand = "Plains";
             }
             table.appendChild(tableRow(plainsVariant, "td", ["", "table-num", "table-num"]));
         }
         if(blue > 0){
             let islandVariant = testVariant("+1 Island", createDiff([[2, 1]]), baseRate, baseDelay, negativeDelay);
             blueBoost = -parseFloat(islandVariant[2].substring(0,6));
+            console.log("Blue boost: " + blueBoost);
             if(blueBoost > maxBoost){
                 maxBoost = blueBoost;
                 maxColor = "blue";
                 maxLand = "Island";
+            }
+            if(blueBoost < minBoost && getCount("Island") > 1){
+                minBoost = blueBoost;
+                minColor = "blue";
+                minLand = "Island";
             }
                 table.appendChild(tableRow(islandVariant, "td", ["", "table-num", "table-num"]));
             }
             if(black > 0){
                 let swampVariant = testVariant("+1 Swamp", createDiff([[4, 1]]), baseRate, baseDelay, negativeDelay);
                 blackBoost = -parseFloat(swampVariant[2].substring(0,6));
+                console.log("Black boost: " + blackBoost);
                 if(blackBoost > maxBoost){
                     maxBoost = blackBoost;
                     maxColor = "black";
                     maxLand = "Swamp";
+                }
+                if(blackBoost < minBoost && getCount("Swamp") > 1){
+                    minBoost = blackBoost;
+                    minColor = "black";
+                    minLand = "Swamp";
                 }
                 table.appendChild(tableRow(swampVariant, "td", ["", "table-num", "table-num"]));
             }
             if(red > 0){
                 let mountainVariant = testVariant("+1 Mountain", createDiff([[8, 1]]), baseRate, baseDelay, negativeDelay);
                 redBoost = -parseFloat(mountainVariant[2].substring(0,6));
+                console.log("Red boost: " + redBoost);
                 if(redBoost > maxBoost){
                     maxBoost = redBoost;
                     maxColor = "red";
                     maxLand = "Mountain";
+                }
+                if(redBoost < minBoost && getCount("Mountain") > 1){
+                    minBoost = redBoost;
+                    minColor = "red";
+                    minLand = "Mountain";
                 }
                 table.appendChild(tableRow(mountainVariant, "td", ["", "table-num", "table-num"]));
             }
             if(green > 0){
                 let forestVariant = testVariant("+1 Forest", createDiff([[16, 1]]), baseRate, baseDelay, negativeDelay);
                 greenBoost = -parseFloat(forestVariant[2].substring(0,6));
+                console.log("Green boost: " + greenBoost);
                 if(greenBoost > maxBoost){
                     maxBoost = greenBoost;
                     maxColor = "green";
                     maxLand = "Forest";
+                }
+                if(greenBoost < minBoost && getCount("Forest") > 1){
+                    minBoost = greenBoost;
+                    minColor = "green";
+                    minLand = "Forest";
                 }
                 table.appendChild(tableRow(forestVariant, "td", ["", "table-num", "table-num"]));
             }
@@ -2663,7 +3239,7 @@
                 for(let turn = 2; turn < 8; turn++){
                     let myLandCount = landCount;
                     let row = ["Turn " + turn];
-                    let landsDrawn = landsAtTurn(turn);
+                    let landsDrawn = landsAtTurn(turn, 0);
                     rowClass = [""];
                     for(let land = 0; land < newCondList.length; land++){
                         let matches = typeSearch(newCondList[land].replaceAll("a ","").replaceAll("an ","").split(" or "));
@@ -2728,6 +3304,8 @@
             console.log(`Execution time: ${endTime - startTime} ms`);
 
             console.log(landTypes);
+            console.log("Add " + maxLand + ", cut " + minLand);
+            return [maxLand, minLand];
         }
 
         // Add an array times a scalar to another array
@@ -2770,7 +3348,7 @@
             // Enters untapped if you control 2 or fewer other lands
             // If it's drawn before turn 4 (p = 10/n+7), it's untapped
             // If it's drawn on or after turn 4, (p = n-3/n+7), check for the probability that the player has only drawn 2 or fewer other lands by that point.
-            let t3Dist = landsAtTurn(3);
+            let t3Dist = landsAtTurn(3, 0);
             let tapped = 0;
             for(let i = 0; i < t3Dist.length; i++){
                 let pTapped = 0;
@@ -2791,7 +3369,7 @@
                 tapped += pTapped * t3Dist[i];
             }
 
-            let totalLandDist = landsAtTurn(turns);
+            let totalLandDist = landsAtTurn(turns, 0);
             let avgLands = 0;
             for(let i = 0; i < totalLandDist.length; i++){
                 avgLands += i * totalLandDist[i];
@@ -2807,7 +3385,7 @@
             // Enters untapped if you control 2 or more other lands
             // If it's drawn before turn three (p = 9/n+7), check for the probability that the player will draw enough other lands to play first.
             // If it's drawn on or after turn 3 (p = n-2/n+7), check for the probability that the player has drawn two or more other lands by that point.
-            let t3Dist = landsAtTurn(3);
+            let t3Dist = landsAtTurn(3, 0);
             let tapped = 0;
             for(let i = 0; i < mullLands.length; i++){
                 let pTapped = 0;
@@ -2838,7 +3416,7 @@
                 tapped += pTapped * mullLands[i];
             }
 
-            let totalLandDist = landsAtTurn(turns);
+            let totalLandDist = landsAtTurn(turns, 0);
             let avgLands = 0;
             for(let i = 0; i < totalLandDist.length; i++){
                 avgLands += i * totalLandDist[i];
@@ -2895,7 +3473,7 @@
                 addError("tap-analyzer-result-box", "You appear to be using check lands in a way we didn't know was possible. Go bother @rudeavocado in the Salubrious Snail discord server so he can add it to this tool");
             }
             // divide by the average number of lands encountered in this case to get the average.
-            let totalLandDist = landsAtTurn(turns);
+            let totalLandDist = landsAtTurn(turns, 0);
             let avgLands = 0;
             for(let i = 0; i < totalLandDist.length; i++){
                 avgLands += i * totalLandDist[i];
@@ -2920,7 +3498,7 @@
                 tapped += pTap * lastLandTurn[i];
             }
 
-            let totalLandDist = landsAtTurn(turns);
+            let totalLandDist = landsAtTurn(turns, 0);
             let avgLands = 0;
             for(let i = 0; i < totalLandDist.length; i++){
                 avgLands += i * totalLandDist[i];
@@ -2945,7 +3523,7 @@
                 tapped += pTap * lastLandTurn[i];
             }
 
-            let totalLandDist = landsAtTurn(turns);
+            let totalLandDist = landsAtTurn(turns, 0);
             let avgLands = 0;
             for(let i = 0; i < totalLandDist.length; i++){
                 avgLands += i * totalLandDist[i];
@@ -2979,7 +3557,7 @@
                     }
                     tapped += pTap * lastLandTurn[i];
                 }
-                let totalLandDist = landsAtTurn(turns);
+                let totalLandDist = landsAtTurn(turns, 0);
                 let avgLands = 0;
                 for(let i = 0; i < totalLandDist.length; i++){
                     avgLands += i * totalLandDist[i];
@@ -3074,7 +3652,7 @@
         function tapTestWrapper(tapTotal, curve, ramp, nonland, maxTurns, span){
             let value = 0;
             let deckLands = [tapTotal, landCount - tapTotal];
-            let myMullLands = landsAtTurn(1); // post-mulligan land distribution plus first draw
+            let myMullLands = landsAtTurn(1, 0); // post-mulligan land distribution plus first draw
             iterations = 0;
             let min = 0;
             // iterate through each number of lands that can be drawn
@@ -3364,54 +3942,63 @@
     </script>
     <div class="analyzer" name="deckEntry">
         <p class="title">Deck Loader</p>
-        <p class="prompt"> Paste your decklist here (including any commanders or companions)</p>
-        <textarea id="decklist" rows="10" cols="50" placeholder="Paste your exported decklist here (format: '1 sol ring' or similar)"></textarea>
-        <p class="prompt"> Names of Commanders (if any) </p>
-        <input type="text" class="commander-name" id="commander-name-1" placeholder="Commander">
-        <div class="commander-weight hidden">
-            <br>
-            <label for="commander" class="prompt">How important is your commander to your deck?</label>
-            <select name="commander" id="cmdr1-weight">
-                <option value="10">Just another card (10x weight)</option>
-                <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option selected="selected">
-                <option value="30">A major boost for a deck that would struggle without it (30x weight)</option>
-                <option value="50">A critical piece of a deck that would fall flat without it (50x weight)</option>
-            </select>
-            <br>
+        <div class="tab">
+            <button id="load-deck-button-0" class="load-deck-button active">Load New Deck</button>
+            <button id="load-deck-button-1" class="load-deck-button active">Switch Loaded Deck</button>
         </div>
-        <br>
-        <input type="text" class="commander-name" id="commander-name-2" placeholder="Partner">
-        <div class="commander-weight hidden">
+        <div id="load-deck-div-0" class="load-deck-div">
+            <p class="prompt"> Paste your decklist here (including any commanders or companions)</p>
+            <textarea id="decklist" rows="10" cols="50" placeholder="Paste your exported decklist here (format: '1 sol ring' or similar)"></textarea>
+            <p class="prompt"> Names of Commanders (if any) </p>
+            <input type="text" class="commander-name" id="commander-name-1" placeholder="Commander">
+            <div class="commander-weight hidden">
+                <br>
+                <label for="commander" class="prompt">How important is your commander to your deck?</label>
+                <select name="commander" id="cmdr1-weight">
+                    <option value="10">Just another card (10x weight)</option>
+                    <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option selected="selected">
+                    <option value="30">A major boost for a deck that would struggle without it (30x weight)</option>
+                    <option value="50">A critical piece of a deck that would fall flat without it (50x weight)</option>
+                </select>
+                <br>
+            </div>
             <br>
-            <label for="partner" class="prompt">How important is your partner to your deck?</label>
-            <select name="partner" id="cmdr2-weight">
-                <option value="10">Just another card (10x weight)</option>
-                <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option selected="selected">
-                <option value="30">A major boost for a deck that would struggle without it (30x weight)</option>
-                <option value="50">A critical piece of a deck that would fall flat without it (50x weight)</option>
-            </select>
+            <input type="text" class="commander-name" id="commander-name-2" placeholder="Partner">
+            <div class="commander-weight hidden">
+                <br>
+                <label for="partner" class="prompt">How important is your partner to your deck?</label>
+                <select name="partner" id="cmdr2-weight">
+                    <option value="10">Just another card (10x weight)</option>
+                    <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option selected="selected">
+                    <option value="30">A major boost for a deck that would struggle without it (30x weight)</option>
+                    <option value="50">A critical piece of a deck that would fall flat without it (50x weight)</option>
+                </select>
+                <br>
+            </div>
             <br>
+            <input type="text" class="commander-name" id="commander-name-3" placeholder="Companion">
+            <div class="commander-weight hidden">
+                <br>
+                <label for="partner" class="prompt">How important is your companion to your deck?</label>
+                <select name="partner" id="cmdr3-weight">
+                    <option value="10">Just another card (10x weight)</option>
+                    <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option selected="selected">
+                    <option value="30">A major boost for a deck that would struggle without it (30x weight)</option>
+                    <option value="50">A critical piece of a deck that would fall flat without it (50x weight)</option>
+                </select>
+                <br>
+            </div>
+            <p>Partial matches are accepted ("atraxa", "yuriko", "kenrith", etc.)</p>
+            <p>
+                <input type="button" value="Load" onclick="loadDict()" id="deck-load-button" style="width: 100px">
+            </p> 
         </div>
-        <br>
-        <input type="text" class="commander-name" id="commander-name-3" placeholder="Companion">
-        <div class="commander-weight hidden">
-            <br>
-            <label for="partner" class="prompt">How important is your companion to your deck?</label>
-            <select name="partner" id="cmdr3-weight">
-                <option value="10">Just another card (10x weight)</option>
-                <option value="20">A nice bonus for a deck that is still functional without it (20x weight)</option selected="selected">
-                <option value="30">A major boost for a deck that would struggle without it (30x weight)</option>
-                <option value="50">A critical piece of a deck that would fall flat without it (50x weight)</option>
-            </select>
-            <br>
+        <div id="load-deck-div-1" class="load-deck-div">
+            <div id="loaded-decks" class="result-box"></div>
         </div>
-        <p>Partial matches are accepted ("atraxa", "yuriko", "kenrith", etc.)</p>
-        <p>
-            <input type="button" value="Load" onclick="loadDict()" id="deck-load-button" style="width: 100px">
-        </p>
         <div class="result-box" id="load-result-box">
             <p id='load-result' class="result-text"></p>
-        </div>
+        </div> 
     </div>
     <div class="analyzer" name="colorCalc">
         <p class="title">Color Analyzer</p>
