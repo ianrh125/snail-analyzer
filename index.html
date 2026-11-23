@@ -2306,6 +2306,42 @@
         }
 
         // LAND CYCLE FUNCTIONS
+
+        function slowish(turns, n){
+            if(turns < n){
+                return 1;
+            }
+            // Enters untapped if you control n-1 or more other lands
+            // If it's drawn before turn three (p = 9/n+7), check for the probability that the player will draw enough other lands to play first.
+            // If it's drawn on or after turn 3 (p = n-2/n+7), check for the probability that the player has drawn two or more other lands by that point.
+            let tnDist = landsAtTurn(n);
+            let tapped = 0;
+            for(let i = 0; i < mullLands.length; i++){
+                let pTapped = 0;
+                // n or more lands in opening hand: 100% success rate
+                // less than n in opening hand: draw n-i in first n-1 turns and we're good, otherwise enters tapped if in first n-1
+                if(i < n){
+                    for(let j = 0; j <= turns; j++){
+                        let pLand = drawType(deckSize-7, landCount - i, turns, j); 
+                        let pDraw = 0
+                        if(i > 0){
+                            pDraw = drawTypeMin(turns, j, n-1, n-i);
+                        }
+                        pTapped += pLand * Math.min((i+j), n-1) * (1 - pDraw);
+                    }
+                }
+
+                tapped += pTapped * mullLands[i];
+            }
+
+            let totalLandDist = landsAtTurn(turns);
+            let avgLands = 0;
+            for(let i = 0; i < totalLandDist.length; i++){
+                avgLands += i * totalLandDist[i];
+            }
+            return tapped / avgLands;
+        }
+
         // Calculate how often a fast land enters tapped
         function pTapFast(turns){
             // Enters untapped if you control 2 or fewer other lands
@@ -2342,49 +2378,7 @@
 
         // Calculate how often a slow land enters tapped
         function pTapSlow(turns){
-            if(turns < 3){
-                return 1;
-            }
-            // Enters untapped if you control 2 or more other lands
-            // If it's drawn before turn three (p = 9/n+7), check for the probability that the player will draw enough other lands to play first.
-            // If it's drawn on or after turn 3 (p = n-2/n+7), check for the probability that the player has drawn two or more other lands by that point.
-            let t3Dist = landsAtTurn(3);
-            let tapped = 0;
-            for(let i = 0; i < mullLands.length; i++){
-                let pTapped = 0;
-                // 3 or more lands in opening hand: 100% success rate
-                // 2 in opening hand: draw one in first 2 turns and we're good, otherwise enters tapped if in first 2
-                if(i == 2){
-                    for(let j = 0; j <= turns; j++){
-                        let pLand = drawType(deckSize-7, landCount - i, turns, j);
-                        let pDraw = drawTypeMin(turns, j, 2, 1);
-                        pTapped += pLand * 2 * (1 - pDraw);
-                    }
-                }
-                // 1 in opening hand: draw two in first 2 turns and we're good, otherwise enters tapped if in first 2
-                else if(i == 1){
-                    for(let j = 0; j <= turns; j++){
-                        let pLand = drawType(deckSize-7, landCount - i, turns, j);
-                        let pDraw = drawTypeMin(turns, j, 2, 2);
-                        pTapped += pLand * Math.min((i+j), 2) * (1 - pDraw);
-                    }
-                }
-                // 0 in opening hand: play lands as we draw them, enters tapped if in first 2
-                else if(i == 0){
-                    for(let j = 0; j <= turns; j++){
-                        let pLand = drawType(deckSize-7, landCount - i, turns, j);
-                        pTapped += pLand * Math.min((i+j), 2);
-                    }
-                }
-                tapped += pTapped * mullLands[i];
-            }
-
-            let totalLandDist = landsAtTurn(turns);
-            let avgLands = 0;
-            for(let i = 0; i < totalLandDist.length; i++){
-                avgLands += i * totalLandDist[i];
-            }
-            return tapped / avgLands;
+            return slowish(turns, 3);
         }
 
         // Calculate how often a check land enters tapped
@@ -2535,6 +2529,13 @@
             }
         }
 
+        function pTapTurb(turns){
+            // Enters untapped if opponents control 8 or 
+            // If it's drawn before turn 4 (p = 10/n+7), it's untapped
+            // If it's drawn on or after turn 4, (p = n-3/n+7), check for the probability that the player has only drawn 2 or fewer other lands by that point.
+            return (slowish(turns,3) + slowish(turns,4)) / 2
+        }
+
         // Calculate how often a land enters tapped
         function pTap(source, turns){
             if(source.fast == true){
@@ -2563,6 +2564,9 @@
             }
             else if(source.fast == "triskaidekadual"){
                 return 0.8; //Since this is outside the deck, we just have to use a fixed approximation. I'm thinking it won't happen often though
+            }
+            else if(source.fast == "turbulent"){
+                return pTapTurb(turns);
             }
             else if(source.fast == "unless"){
                 addError("tap-analyzer-result-box", "You appear to be using one of those new-fangled land cycles that we haven't even heard of. Go bother @rudeavocado in the Salubrious Sail discord server so he can add it to this tool");
